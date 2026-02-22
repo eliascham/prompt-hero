@@ -1,65 +1,91 @@
-import Image from "next/image";
+import { ChallengeCard } from "@/components/ChallengeCard";
+import { Zap } from "lucide-react";
+
+const challenges = [
+  {
+    id: "01-invoice-parser",
+    title: "Invoice Line Item Parser",
+    difficulty: "easy" as const,
+    tags: ["CTX", "MFEED"],
+    estimatedMinutes: 15,
+  },
+  {
+    id: "02-leaderboard-ranking",
+    title: "Leaderboard Ranking",
+    difficulty: "easy" as const,
+    tags: ["CTX", "AMB"],
+    estimatedMinutes: 15,
+  },
+  {
+    id: "03-rate-limiter",
+    title: "Rate Limiter",
+    difficulty: "medium" as const,
+    tags: ["CTX", "ARCH"],
+    estimatedMinutes: 20,
+  },
+  {
+    id: "04-config-migration",
+    title: "Config File Migration",
+    difficulty: "medium" as const,
+    tags: ["CTX", "HALL", "ENV"],
+    estimatedMinutes: 25,
+  },
+  {
+    id: "05-pii-redaction",
+    title: "PII Redaction",
+    difficulty: "medium" as const,
+    tags: ["CTX", "MFEED"],
+    estimatedMinutes: 20,
+  },
+  {
+    id: "06-event-deduplicator",
+    title: "Event Deduplicator",
+    difficulty: "hard" as const,
+    tags: ["RED", "MFEED", "TRAP"],
+    estimatedMinutes: 30,
+  },
+  {
+    id: "07-notification-router",
+    title: "Notification Router",
+    difficulty: "hard" as const,
+    tags: ["CONTRA", "OBFIX", "AMB"],
+    estimatedMinutes: 30,
+  },
+  {
+    id: "08-log-aggregator",
+    title: "Log Aggregator",
+    difficulty: "hard" as const,
+    tags: ["ARCH", "ENV", "OBFIX"],
+    estimatedMinutes: 30,
+  },
+];
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="mx-auto max-w-5xl px-4 py-16">
+      {/* Hero */}
+      <div className="mb-16 text-center">
+        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-1.5">
+          <Zap className="h-4 w-4 text-amber-400" />
+          <span className="text-sm font-medium text-amber-400">
+            AI-in-the-Middle Challenges
+          </span>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+        <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
+          Prompt Hero
+        </h1>
+        <p className="mx-auto max-w-xl text-lg text-muted-foreground">
+          The AI has a flawed brief. You have the truth. Guide the AI to the
+          correct solution through conversation alone.
+        </p>
+      </div>
+
+      {/* Challenge Grid */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {challenges.map((c) => (
+          <ChallengeCard key={c.id} {...c} />
+        ))}
+      </div>
     </div>
   );
 }
