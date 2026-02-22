@@ -1,0 +1,60 @@
+{
+  "id": "05-pii-redaction",
+  "title": "PII Redaction",
+  "difficulty": "easy",
+  "tags": ["regex", "privacy", "text-processing", "pii"],
+  "truthSpec": {
+    "title": "PII Redaction",
+    "overview": "Build a text redactor that identifies and replaces personally identifiable information (PII) with type-specific markers.",
+    "requirements": [
+      { "id": "R1", "text": "Detect and redact email addresses → replace with [REDACTED_EMAIL]", "revealable": true },
+      { "id": "R2", "text": "Detect and redact phone numbers → replace with [REDACTED_PHONE]", "revealable": true },
+      { "id": "R3", "text": "Detect and redact SSNs (XXX-XX-XXXX format) → replace with [REDACTED_SSN]", "revealable": true },
+      { "id": "R4", "text": "Use type-specific markers (not a generic marker)", "revealable": true },
+      { "id": "R5", "text": "Handle multiple PII instances in the same text", "revealable": false },
+      { "id": "R6", "text": "Preserve all non-PII text exactly as-is", "revealable": false }
+    ],
+    "edgeCases": [
+      "Text with no PII should be returned unchanged",
+      "Multiple PII types in the same line",
+      "Phone formats: (555) 123-4567, 555-123-4567, 555.123.4567",
+      "Emails with various TLDs and subdomains",
+      "SSNs must match exactly XXX-XX-XXXX (9 digits with dashes)"
+    ],
+    "testSummary": "6 tests covering: email redaction, phone redaction, SSN redaction, type-specific markers, multiple PII in one text, and no-PII passthrough."
+  },
+  "aiBrief": {
+    "title": "PII Redaction",
+    "overview": "Build a text redactor that identifies and replaces personally identifiable information (PII) with redaction markers.",
+    "requirements": [
+      "Detect and redact email addresses → replace with [REMOVED]",
+      "Detect and redact SSNs (XXX-XX-XXXX format) → replace with [REMOVED]",
+      "Replace all detected PII with the marker [REMOVED]",
+      "Handle multiple PII instances in the same text",
+      "Preserve all non-PII text exactly as-is"
+    ],
+    "flaws": [
+      {
+        "id": "F1",
+        "type": "MFEED",
+        "description": "Brief omits phone number detection entirely — truth requires [REDACTED_PHONE]",
+        "affectedRequirement": "R2"
+      },
+      {
+        "id": "F2",
+        "type": "CTX",
+        "description": "Brief uses generic [REMOVED] marker; truth requires type-specific markers like [REDACTED_EMAIL], [REDACTED_SSN]",
+        "affectedRequirement": "R4"
+      }
+    ]
+  },
+  "starterCode": {
+    "pii_redactor.ts": "/**\n * Redacts PII from the given text, replacing each type with\n * a type-specific marker.\n * @param text - Input text that may contain PII\n * @returns Text with PII replaced by redaction markers\n */\nexport function redactPII(text: string): string {\n  // TODO: Implement PII redaction\n  return text;\n}\n"
+  },
+  "meta": {
+    "estimatedMinutes": 15,
+    "optimalMessages": 4,
+    "optimalReveals": 1,
+    "flawTypes": ["CTX", "MFEED"]
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "id": "08-log-aggregator",
+  "title": "Log Aggregator",
+  "difficulty": "hard",
+  "tags": ["logs", "aggregation", "json", "timezones", "error-rate"],
+  "truthSpec": {
+    "title": "Log Aggregator",
+    "overview": "Build a log aggregator that processes newline-delimited JSON logs, aggregates by service and level, calculates error rates, and handles timezone normalization.",
+    "requirements": [
+      { "id": "R1", "text": "Accept newline-delimited JSON (NDJSON) input — each line is one JSON log entry", "revealable": true },
+      { "id": "R2", "text": "Each log entry has: service, level (info/warn/error/debug), message, timestamp (ISO 8601 with timezone)", "revealable": false },
+      { "id": "R3", "text": "Aggregate logs by service + level combination", "revealable": false },
+      { "id": "R4", "text": "Calculate error rate per service: (error count / total count for that service) × 100, as a percentage", "revealable": true },
+      { "id": "R5", "text": "Normalize all timestamps to UTC before aggregation (inputs may have various timezone offsets)", "revealable": true },
+      { "id": "R6", "text": "Handle malformed lines gracefully — skip them and count them in a malformedCount field", "revealable": true }
+    ],
+    "edgeCases": [
+      "Empty input returns zero counts",
+      "All lines malformed → only malformedCount populated",
+      "Timestamps with +05:30, -08:00, Z offsets should all normalize to UTC",
+      "Service names are case-sensitive"
+    ],
+    "testSummary": "5 tests covering: basic aggregation, error rate calculation, timezone normalization, malformed line handling, and empty input."
+  },
+  "aiBrief": {
+    "title": "Log Aggregator",
+    "overview": "Build a log aggregator that processes JSON log arrays, aggregates by service and level, and calculates statistics.",
+    "requirements": [
+      "Accept a JSON array of log entries",
+      "Each log entry has: service, level (info/warn/error/debug), message, timestamp",
+      "Aggregate logs by service + level combination",
+      "Calculate error count per service",
+      "Assume all timestamps are already in UTC",
+      "Return: aggregation map, error counts per service, total log count"
+    ],
+    "flaws": [
+      {
+        "id": "F1",
+        "type": "ARCH",
+        "description": "Brief says JSON array input; truth says newline-delimited JSON (NDJSON)",
+        "affectedRequirement": "R1"
+      },
+      {
+        "id": "F2",
+        "type": "ENV",
+        "description": "Brief assumes UTC timestamps; truth requires timezone normalization from various offsets",
+        "affectedRequirement": "R5"
+      },
+      {
+        "id": "F3",
+        "type": "OBFIX",
+        "description": "Brief says error count; truth says error rate as percentage. Also omits malformedCount field.",
+        "affectedRequirement": "R4"
+      }
+    ]
+  },
+  "starterCode": {
+    "log_aggregator.ts": "export interface LogEntry {\n  service: string;\n  level: \"info\" | \"warn\" | \"error\" | \"debug\";\n  message: string;\n  timestamp: string;\n}\n\nexport interface AggregationResult {\n  aggregation: Record<string, number>;\n  errorRates: Record<string, number>;\n  totalCount: number;\n  malformedCount: number;\n}\n\nexport function aggregateLogs(ndjsonInput: string): AggregationResult {\n  // TODO: Implement log aggregation\n  return {\n    aggregation: {},\n    errorRates: {},\n    totalCount: 0,\n    malformedCount: 0,\n  };\n}\n"
+  },
+  "meta": {
+    "estimatedMinutes": 25,
+    "optimalMessages": 6,
+    "optimalReveals": 2,
+    "flawTypes": ["ARCH", "ENV", "OBFIX"]
+  }
+}

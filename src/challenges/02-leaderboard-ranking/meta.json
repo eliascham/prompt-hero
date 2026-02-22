@@ -1,0 +1,10 @@
+{
+  "id": "02-leaderboard-ranking",
+  "title": "Leaderboard Ranking",
+  "difficulty": "easy",
+  "tags": ["sorting", "tiebreaking", "ranking"],
+  "flawTypes": ["CTX", "AMB"],
+  "estimatedMinutes": 12,
+  "optimalMessages": 3,
+  "optimalReveals": 1
+}

@@ -1,0 +1,10 @@
+{
+  "id": "06-event-deduplicator",
+  "title": "Event Deduplicator",
+  "difficulty": "hard",
+  "tags": ["deduplication", "composite-keys", "timestamps", "ordering"],
+  "flawTypes": ["RED", "MFEED", "TRAP"],
+  "estimatedMinutes": 25,
+  "optimalMessages": 6,
+  "optimalReveals": 2
+}

@@ -1,0 +1,58 @@
+{
+  "id": "02-leaderboard-ranking",
+  "title": "Leaderboard Ranking",
+  "difficulty": "easy",
+  "tags": ["sorting", "tiebreaking", "ranking"],
+  "truthSpec": {
+    "title": "Leaderboard Ranking",
+    "overview": "Implement a leaderboard ranking system that sorts players by score with specific tiebreaking rules.",
+    "requirements": [
+      { "id": "R1", "text": "Accept an array of player objects with: name, score, gamesPlayed", "revealable": false },
+      { "id": "R2", "text": "Sort players by score in descending order (highest first)", "revealable": false },
+      { "id": "R3", "text": "For tied scores, rank by fewest games played first (efficiency tiebreaker)", "revealable": true },
+      { "id": "R4", "text": "For ties in both score and games, sort alphabetically by name", "revealable": true },
+      { "id": "R5", "text": "Assign rank numbers (1-based) — tied players get the same rank, next rank skips", "revealable": true }
+    ],
+    "edgeCases": [
+      "Empty input returns empty array",
+      "Single player gets rank 1",
+      "All players tied: rank by games, then alphabetically",
+      "Multiple ties at different score levels"
+    ],
+    "testSummary": "5 tests covering: basic sorting, efficiency tiebreaker, alphabetical tiebreaker, rank numbering with skips, and empty input."
+  },
+  "aiBrief": {
+    "title": "Leaderboard Ranking",
+    "overview": "Implement a leaderboard ranking system that sorts players and assigns rankings.",
+    "requirements": [
+      "Accept an array of player objects with: name, score, gamesPlayed",
+      "Sort players by score in descending order (highest first)",
+      "Sort efficiently for large datasets",
+      "Assign rank numbers starting from 1",
+      "Return sorted array with rank field added"
+    ],
+    "flaws": [
+      {
+        "id": "F1",
+        "type": "CTX",
+        "description": "Brief omits the efficiency tiebreaker (fewest games played wins ties)",
+        "affectedRequirement": "R3"
+      },
+      {
+        "id": "F2",
+        "type": "AMB",
+        "description": "Brief says 'sort efficiently' which the AI may interpret as algorithm performance rather than the tiebreaker rule. Also omits alphabetical fallback.",
+        "affectedRequirement": "R4"
+      }
+    ]
+  },
+  "starterCode": {
+    "leaderboard.ts": "export interface Player {\n  name: string;\n  score: number;\n  gamesPlayed: number;\n}\n\nexport interface RankedPlayer extends Player {\n  rank: number;\n}\n\n/**\n * Ranks players according to the leaderboard rules.\n * @param players - Array of player objects\n * @returns Sorted array with rank field added\n */\nexport function rankPlayers(players: Player[]): RankedPlayer[] {\n  // TODO: Implement ranking\n  return [];\n}\n"
+  },
+  "meta": {
+    "estimatedMinutes": 12,
+    "optimalMessages": 3,
+    "optimalReveals": 1,
+    "flawTypes": ["CTX", "AMB"]
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "id": "08-log-aggregator",
+  "title": "Log Aggregator",
+  "difficulty": "hard",
+  "tags": ["logs", "aggregation", "json", "timezones", "error-rate"],
+  "flawTypes": ["ARCH", "ENV", "OBFIX"],
+  "estimatedMinutes": 25,
+  "optimalMessages": 6,
+  "optimalReveals": 2
+}

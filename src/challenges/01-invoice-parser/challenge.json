@@ -1,0 +1,59 @@
+{
+  "id": "01-invoice-parser",
+  "title": "Invoice Line Item Parser",
+  "difficulty": "easy",
+  "tags": ["parsing", "csv", "dates", "tax"],
+  "truthSpec": {
+    "title": "Invoice Line Item Parser",
+    "overview": "Build a parser that reads CSV invoice data and produces structured JSON output with correct tax calculations and date formatting.",
+    "requirements": [
+      { "id": "R1", "text": "Parse CSV input with columns: item_name, quantity, unit_price, date", "revealable": true },
+      { "id": "R2", "text": "Calculate line totals as quantity × unit_price", "revealable": false },
+      { "id": "R3", "text": "Apply compound tax for line items over $1000: 8% state tax on subtotal, then 2% city tax on (subtotal + state tax)", "revealable": true },
+      { "id": "R4", "text": "Apply simple 8% tax for line items $1000 or under", "revealable": true },
+      { "id": "R5", "text": "Format all dates as ISO 8601 (YYYY-MM-DDTHH:mm:ssZ)", "revealable": true },
+      { "id": "R6", "text": "Output JSON array of line items with: item_name, quantity, unit_price, subtotal, tax, total, date", "revealable": false }
+    ],
+    "edgeCases": [
+      "Handle quoted CSV fields that contain commas",
+      "Handle empty rows gracefully (skip them)",
+      "Dates may come in various formats (MM/DD/YYYY, YYYY-MM-DD, Month DD, YYYY)",
+      "Quantities and prices may have leading/trailing whitespace"
+    ],
+    "testSummary": "6 tests covering: basic parsing, compound tax calculation, simple tax, ISO date formatting, quoted fields, and empty row handling."
+  },
+  "aiBrief": {
+    "title": "Invoice Line Item Parser",
+    "overview": "Build a parser that reads CSV invoice data and produces structured JSON output with tax calculations and date formatting.",
+    "requirements": [
+      "Parse CSV input with columns: item_name, quantity, unit_price, date",
+      "Calculate line totals as quantity × unit_price",
+      "Apply flat 8% tax on all line items regardless of amount",
+      "Format all dates as MM/DD/YYYY format",
+      "Output JSON array of line items with: item_name, quantity, unit_price, subtotal, tax, total, date"
+    ],
+    "flaws": [
+      {
+        "id": "F1",
+        "type": "CTX",
+        "description": "Brief says flat 8% tax; truth requires compound tax (8% state + 2% city) for items over $1000",
+        "affectedRequirement": "R3"
+      },
+      {
+        "id": "F2",
+        "type": "MFEED",
+        "description": "Brief says MM/DD/YYYY date format; truth requires ISO 8601",
+        "affectedRequirement": "R5"
+      }
+    ]
+  },
+  "starterCode": {
+    "invoice_parser.ts": "export interface InvoiceLineItem {\n  item_name: string;\n  quantity: number;\n  unit_price: number;\n  subtotal: number;\n  tax: number;\n  total: number;\n  date: string;\n}\n\n/**\n * Parses CSV invoice data into structured line items.\n * @param csvData - Raw CSV string with headers: item_name, quantity, unit_price, date\n * @returns Array of parsed and calculated line items\n */\nexport function parseInvoice(csvData: string): InvoiceLineItem[] {\n  // TODO: Implement parser\n  return [];\n}\n"
+  },
+  "meta": {
+    "estimatedMinutes": 15,
+    "optimalMessages": 4,
+    "optimalReveals": 1,
+    "flawTypes": ["CTX", "MFEED"]
+  }
+}

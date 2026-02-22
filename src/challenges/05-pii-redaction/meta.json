@@ -1,0 +1,10 @@
+{
+  "id": "05-pii-redaction",
+  "title": "PII Redaction",
+  "difficulty": "easy",
+  "tags": ["regex", "privacy", "text-processing", "pii"],
+  "flawTypes": ["CTX", "MFEED"],
+  "estimatedMinutes": 15,
+  "optimalMessages": 4,
+  "optimalReveals": 1
+}

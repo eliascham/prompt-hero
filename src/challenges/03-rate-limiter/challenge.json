@@ -1,0 +1,59 @@
+{
+  "id": "03-rate-limiter",
+  "title": "Rate Limiter",
+  "difficulty": "medium",
+  "tags": ["rate-limiting", "sliding-window", "redis", "api"],
+  "truthSpec": {
+    "title": "Rate Limiter",
+    "overview": "Implement a rate limiter that uses a sliding window algorithm with per-user AND per-endpoint tracking, backed by a Redis-compatible store interface.",
+    "requirements": [
+      { "id": "R1", "text": "Implement sliding window rate limiting (not fixed window)", "revealable": true },
+      { "id": "R2", "text": "Track limits per-user AND per-endpoint (composite key: userId + endpoint)", "revealable": true },
+      { "id": "R3", "text": "Window size: 60 seconds", "revealable": false },
+      { "id": "R4", "text": "Default limit: 100 requests per window per user-endpoint pair", "revealable": false },
+      { "id": "R5", "text": "Return an object with: allowed (boolean), remaining (number), retryAfterMs (number | null)", "revealable": true },
+      { "id": "R6", "text": "Accept a RedisStore interface for storage (get, set, del methods)", "revealable": true }
+    ],
+    "edgeCases": [
+      "First request from a user-endpoint pair is always allowed",
+      "Requests at exact window boundary should start a new window",
+      "Different endpoints for the same user should have independent limits",
+      "Handle concurrent requests gracefully"
+    ],
+    "testSummary": "5 tests covering: basic allow/deny, sliding window behavior, per-user-endpoint independence, remaining count accuracy, and retry-after timing."
+  },
+  "aiBrief": {
+    "title": "Rate Limiter",
+    "overview": "Implement a rate limiter that tracks request counts and limits users when they exceed their quota.",
+    "requirements": [
+      "Implement fixed window rate limiting (reset counter at window boundary)",
+      "Track limits per user using a Map<string, number> for storage",
+      "Window size: 60 seconds",
+      "Default limit: 100 requests per window per user",
+      "Return an object with: allowed (boolean), remaining (number)"
+    ],
+    "flaws": [
+      {
+        "id": "F1",
+        "type": "CTX",
+        "description": "Brief says fixed window; truth requires sliding window algorithm",
+        "affectedRequirement": "R1"
+      },
+      {
+        "id": "F2",
+        "type": "ARCH",
+        "description": "Brief says in-memory Map; truth requires RedisStore interface. Also omits per-endpoint tracking and retryAfterMs field.",
+        "affectedRequirement": "R2"
+      }
+    ]
+  },
+  "starterCode": {
+    "rate_limiter.ts": "export interface RedisStore {\n  get(key: string): Promise<string | null>;\n  set(key: string, value: string, options?: { ex?: number }): Promise<void>;\n  del(key: string): Promise<void>;\n}\n\nexport interface RateLimitResult {\n  allowed: boolean;\n  remaining: number;\n  retryAfterMs: number | null;\n}\n\nexport interface RateLimiterConfig {\n  windowMs?: number;\n  maxRequests?: number;\n  store: RedisStore;\n}\n\nexport function createRateLimiter(config: RateLimiterConfig) {\n  const windowMs = config.windowMs ?? 60000;\n  const maxRequests = config.maxRequests ?? 100;\n  const store = config.store;\n\n  async function checkLimit(\n    userId: string,\n    endpoint: string\n  ): Promise<RateLimitResult> {\n    // TODO: Implement sliding window rate limiting\n    return { allowed: true, remaining: maxRequests, retryAfterMs: null };\n  }\n\n  return { checkLimit };\n}\n"
+  },
+  "meta": {
+    "estimatedMinutes": 20,
+    "optimalMessages": 5,
+    "optimalReveals": 1,
+    "flawTypes": ["CTX", "ARCH"]
+  }
+}

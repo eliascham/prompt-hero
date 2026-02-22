@@ -1,0 +1,10 @@
+{
+  "id": "04-config-migration",
+  "title": "Config File Migration",
+  "difficulty": "medium",
+  "tags": ["yaml", "migration", "config", "nested-objects"],
+  "flawTypes": ["CTX", "HALL", "ENV"],
+  "estimatedMinutes": 18,
+  "optimalMessages": 5,
+  "optimalReveals": 1
+}

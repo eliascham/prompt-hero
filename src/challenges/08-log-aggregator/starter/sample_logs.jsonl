@@ -1,0 +1,8 @@
+{"service":"auth","level":"info","message":"User login successful","timestamp":"2024-01-15T10:30:00Z"}
+{"service":"auth","level":"error","message":"Invalid credentials","timestamp":"2024-01-15T10:31:00-05:00"}
+{"service":"api","level":"info","message":"Request processed","timestamp":"2024-01-15T16:00:00+05:30"}
+{"service":"api","level":"warn","message":"Slow query detected","timestamp":"2024-01-15T10:32:00Z"}
+{"service":"auth","level":"info","message":"Token refreshed","timestamp":"2024-01-15T10:33:00Z"}
+this is not valid json
+{"service":"api","level":"error","message":"Database timeout","timestamp":"2024-01-15T18:30:00+08:00"}
+{"service":"auth","level":"debug","message":"Cache hit","timestamp":"2024-01-15T10:34:00Z"}

@@ -1,0 +1,10 @@
+{
+  "id": "03-rate-limiter",
+  "title": "Rate Limiter",
+  "difficulty": "medium",
+  "tags": ["rate-limiting", "sliding-window", "redis", "api"],
+  "flawTypes": ["CTX", "ARCH"],
+  "estimatedMinutes": 20,
+  "optimalMessages": 5,
+  "optimalReveals": 1
+}

@@ -1,0 +1,73 @@
+{
+  "id": "04-config-migration",
+  "title": "Config File Migration",
+  "difficulty": "medium",
+  "tags": ["yaml", "migration", "config", "nested-objects"],
+  "truthSpec": {
+    "title": "Config File Migration",
+    "overview": "Migrate YAML configuration files from v1 format to v2 format, with specific restructuring rules.",
+    "requirements": [
+      { "id": "R1", "text": "Accept a v1 YAML config string and return a v2 YAML config string", "revealable": false },
+      { "id": "R2", "text": "Nest database-related keys (host, port, name, user, password) under services.database", "revealable": true },
+      { "id": "R3", "text": "Rename log_level to logging.verbosity (nested under logging key)", "revealable": true },
+      { "id": "R4", "text": "Set version: 2 at the root level", "revealable": false },
+      { "id": "R5", "text": "Preserve all other top-level keys unchanged", "revealable": true },
+      { "id": "R6", "text": "Output valid YAML", "revealable": false }
+    ],
+    "edgeCases": [
+      "v1 config may not have all database keys — migrate only those present",
+      "log_level may be missing — omit logging.verbosity if so",
+      "Extra unknown keys should be preserved at root level",
+      "Handle numeric values correctly (port should remain a number)"
+    ],
+    "testSummary": "5 tests covering: basic migration, database nesting, log_level renaming, version field, and preservation of extra keys."
+  },
+  "aiBrief": {
+    "title": "Config File Migration",
+    "overview": "Migrate YAML configuration files from v1 format to v2 format with restructuring and validation.",
+    "requirements": [
+      "Accept a v1 YAML config string and return a v2 YAML config string",
+      "Nest database keys under database.connection (host, port, name, user, password)",
+      "Rename log_level to logging.level (nested under logging key)",
+      "Set version: 2 at the root level",
+      "Validate that all required database keys are present and throw if any are missing",
+      "Strip YAML comments during migration",
+      "Output valid YAML"
+    ],
+    "flaws": [
+      {
+        "id": "F1",
+        "type": "CTX",
+        "description": "Brief nests under database.connection; truth nests under services.database",
+        "affectedRequirement": "R2"
+      },
+      {
+        "id": "F2",
+        "type": "CTX",
+        "description": "Brief renames to logging.level; truth renames to logging.verbosity",
+        "affectedRequirement": "R3"
+      },
+      {
+        "id": "F3",
+        "type": "HALL",
+        "description": "Brief adds validation requirement that doesn't exist in truth — truth says migrate only present keys",
+        "affectedRequirement": "R5"
+      },
+      {
+        "id": "F4",
+        "type": "ENV",
+        "description": "Brief assumes comments should be stripped; truth says nothing about comments",
+        "affectedRequirement": "R6"
+      }
+    ]
+  },
+  "starterCode": {
+    "config_migrator.ts": "/**\n * Migrates a v1 YAML config to v2 format.\n * @param v1Yaml - Raw YAML string in v1 format\n * @returns YAML string in v2 format\n */\nexport function migrateConfig(v1Yaml: string): string {\n  // TODO: Implement migration\n  return \"\";\n}\n\n/**\n * Simple YAML parser for flat key-value configs.\n */\nexport function parseSimpleYaml(yaml: string): Record<string, string | number> {\n  const result: Record<string, string | number> = {};\n  const lines = yaml.split(\"\\n\");\n  for (const line of lines) {\n    const trimmed = line.trim();\n    if (!trimmed || trimmed.startsWith(\"#\")) continue;\n    const colonIdx = trimmed.indexOf(\":\");\n    if (colonIdx === -1) continue;\n    const key = trimmed.slice(0, colonIdx).trim();\n    let value: string | number = trimmed.slice(colonIdx + 1).trim();\n    const num = Number(value);\n    if (!isNaN(num) && value !== \"\") {\n      value = num;\n    }\n    result[key] = value;\n  }\n  return result;\n}\n\n/**\n * Serializes a nested object to YAML string.\n */\nexport function toYaml(obj: Record<string, unknown>, indent = 0): string {\n  let result = \"\";\n  const prefix = \"  \".repeat(indent);\n  for (const [key, value] of Object.entries(obj)) {\n    if (typeof value === \"object\" && value !== null && !Array.isArray(value)) {\n      result += `${prefix}${key}:\\n`;\n      result += toYaml(value as Record<string, unknown>, indent + 1);\n    } else {\n      result += `${prefix}${key}: ${value}\\n`;\n    }\n  }\n  return result;\n}\n"
+  },
+  "meta": {
+    "estimatedMinutes": 18,
+    "optimalMessages": 5,
+    "optimalReveals": 1,
+    "flawTypes": ["CTX", "HALL", "ENV"]
+  }
+}

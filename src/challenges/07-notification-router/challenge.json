@@ -1,0 +1,64 @@
+{
+  "id": "07-notification-router",
+  "title": "Notification Router",
+  "difficulty": "hard",
+  "tags": ["routing", "notifications", "opt-out", "priority"],
+  "truthSpec": {
+    "title": "Notification Router",
+    "overview": "Build a notification routing system that sends notifications through appropriate channels based on priority level, with user opt-out support.",
+    "requirements": [
+      { "id": "R1", "text": "Accept a notification with: userId, priority (critical/high/medium/low), message", "revealable": false },
+      { "id": "R2", "text": "Route critical → SMS + email + push, high → SMS + email, medium → email + push, low → push only", "revealable": true },
+      { "id": "R3", "text": "Accept user preferences with opted-out channels", "revealable": true },
+      { "id": "R4", "text": "Users can opt out of channels but cannot add channels beyond their priority level", "revealable": true },
+      { "id": "R5", "text": "Return the list of channels the notification was actually sent through", "revealable": false },
+      { "id": "R6", "text": "If all channels are opted out, return empty array (notification is silently dropped)", "revealable": true }
+    ],
+    "edgeCases": [
+      "User opts out of all channels → empty send list",
+      "User opt-out for a channel not in their priority level has no effect",
+      "Unknown priority level should throw an error",
+      "Missing user preferences → use defaults (no opt-outs)"
+    ],
+    "testSummary": "6 tests covering: critical routing, high routing, medium/low routing, opt-out behavior, cannot-add-channels rule, and all-opted-out scenario."
+  },
+  "aiBrief": {
+    "title": "Notification Router",
+    "overview": "Build a notification routing system that sends notifications through appropriate channels based on priority.",
+    "requirements": [
+      "Accept a notification with: userId, priority (critical/high/medium/low), message",
+      "Route critical → SMS + email, high → SMS + email, medium → email + push, low → push only",
+      "Accept user preferences for notification channels",
+      "Return the list of channels the notification was sent through"
+    ],
+    "flaws": [
+      {
+        "id": "F1",
+        "type": "CONTRA",
+        "description": "Brief says critical → SMS + email (missing push); truth says critical → SMS + email + push",
+        "affectedRequirement": "R2"
+      },
+      {
+        "id": "F2",
+        "type": "OBFIX",
+        "description": "The critical channel list in the brief is an obvious typo that matches high — may lure AI into treating critical same as high",
+        "affectedRequirement": "R2"
+      },
+      {
+        "id": "F3",
+        "type": "AMB",
+        "description": "Brief mentions 'user preferences' but doesn't specify opt-out semantics or the cannot-add-channels rule",
+        "affectedRequirement": "R4"
+      }
+    ]
+  },
+  "starterCode": {
+    "notification_router.ts": "export type Priority = \"critical\" | \"high\" | \"medium\" | \"low\";\nexport type Channel = \"sms\" | \"email\" | \"push\";\n\nexport interface Notification {\n  userId: string;\n  priority: Priority;\n  message: string;\n}\n\nexport interface UserPreferences {\n  optedOutChannels: Channel[];\n}\n\n/**\n * Routes a notification to the appropriate channels based on priority\n * and user preferences.\n */\nexport function routeNotification(\n  notification: Notification,\n  preferences?: UserPreferences\n): Channel[] {\n  // TODO: Implement notification routing\n  return [];\n}\n"
+  },
+  "meta": {
+    "estimatedMinutes": 22,
+    "optimalMessages": 5,
+    "optimalReveals": 2,
+    "flawTypes": ["CONTRA", "OBFIX", "AMB"]
+  }
+}

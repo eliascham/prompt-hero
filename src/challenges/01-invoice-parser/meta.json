@@ -1,0 +1,10 @@
+{
+  "id": "01-invoice-parser",
+  "title": "Invoice Line Item Parser",
+  "difficulty": "easy",
+  "tags": ["parsing", "csv", "dates", "tax"],
+  "flawTypes": ["CTX", "MFEED"],
+  "estimatedMinutes": 15,
+  "optimalMessages": 4,
+  "optimalReveals": 1
+}
