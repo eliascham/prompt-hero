@@ -1,66 +1,10 @@
 import { ChallengeCard } from "@/components/ChallengeCard";
+import { listChallenges } from "@/challenges/loader";
 import { Zap } from "lucide-react";
 
-const challenges = [
-  {
-    id: "01-invoice-parser",
-    title: "Invoice Line Item Parser",
-    difficulty: "easy" as const,
-    tags: ["CTX", "MFEED"],
-    estimatedMinutes: 15,
-  },
-  {
-    id: "02-leaderboard-ranking",
-    title: "Leaderboard Ranking",
-    difficulty: "easy" as const,
-    tags: ["CTX", "AMB"],
-    estimatedMinutes: 15,
-  },
-  {
-    id: "03-rate-limiter",
-    title: "Rate Limiter",
-    difficulty: "medium" as const,
-    tags: ["CTX", "ARCH"],
-    estimatedMinutes: 20,
-  },
-  {
-    id: "04-config-migration",
-    title: "Config File Migration",
-    difficulty: "medium" as const,
-    tags: ["CTX", "HALL", "ENV"],
-    estimatedMinutes: 25,
-  },
-  {
-    id: "05-pii-redaction",
-    title: "PII Redaction",
-    difficulty: "medium" as const,
-    tags: ["CTX", "MFEED"],
-    estimatedMinutes: 20,
-  },
-  {
-    id: "06-event-deduplicator",
-    title: "Event Deduplicator",
-    difficulty: "hard" as const,
-    tags: ["RED", "MFEED", "TRAP"],
-    estimatedMinutes: 30,
-  },
-  {
-    id: "07-notification-router",
-    title: "Notification Router",
-    difficulty: "hard" as const,
-    tags: ["CONTRA", "OBFIX", "AMB"],
-    estimatedMinutes: 30,
-  },
-  {
-    id: "08-log-aggregator",
-    title: "Log Aggregator",
-    difficulty: "hard" as const,
-    tags: ["ARCH", "ENV", "OBFIX"],
-    estimatedMinutes: 30,
-  },
-];
+export default async function Home() {
+  const challenges = await listChallenges();
 
-export default function Home() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-16">
       {/* Hero */}

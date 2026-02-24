@@ -38,6 +38,17 @@ export const scoreSession = inngest.createFunction(
 
     const session = rawSession as unknown as SessionRow;
 
+    // Idempotency: skip if session already has a score
+    const { data: existingScore } = await db
+      .from("scores")
+      .select("id")
+      .eq("session_id", sessionId)
+      .maybeSingle();
+
+    if (existingScore) {
+      return { skipped: true, reason: "Score already exists" };
+    }
+
     // Load challenge
     const { data: rawChallenge, error: challengeError } = await db
       .from("challenges")

@@ -1,22 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSupabase } from "@/app/api/_helpers/supabase-helpers";
 import { getCachedSession } from "@/lib/redis";
-import type {
-  ScoreRequest,
-  ScoreResponse,
-  ScoreRank,
-  Session,
-  TestResult,
-} from "@/lib/types";
-
-function computeRank(totalScore: number): ScoreRank {
-  if (totalScore >= 95) return "S";
-  if (totalScore >= 85) return "A";
-  if (totalScore >= 70) return "B";
-  if (totalScore >= 55) return "C";
-  if (totalScore >= 40) return "D";
-  return "F";
-}
+import { loadChallenge } from "@/app/api/_helpers/challenge-loader";
+import {
+  calculateCorrectness,
+  calculateEfficiency,
+  calculateDiagnosisQuality,
+  calculateTotalScore,
+  determineRank,
+} from "@/lib/scoring";
+import { inngest } from "@/lib/inngest/client";
+import type { ScoreRequest, ScoreResponse, Session } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,6 +23,12 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Optional auth: extract user from Authorization header if present
+    const authHeader = request.headers.get("authorization");
+    const headerUserId = authHeader?.startsWith("Bearer ")
+      ? authHeader.slice(7)
+      : null;
 
     // Load session
     const supabase = getServerSupabase();
@@ -59,35 +59,41 @@ export async function POST(request: NextRequest) {
       };
     }
 
-    // Compute correctness from test results
-    const testResults = session.testResults as TestResult[];
-    const totalTests = testResults.length;
-    const passedTests = testResults.filter((t) => t.passed).length;
-    const correctness =
-      totalTests > 0 ? (passedTests / totalTests) * 100 : 0;
+    // Load challenge for diagnosis quality scoring
+    const challenge = await loadChallenge(session.challengeId);
+    if (!challenge) {
+      return NextResponse.json(
+        { error: "Challenge not found" },
+        { status: 500 }
+      );
+    }
 
-    // Compute intervention efficiency
+    // Use scoring.ts functions
+    const correctness = calculateCorrectness(session.testResults);
     const userMessages = session.messages.filter((m) => m.role === "user");
-    const interventionEfficiency = Math.max(
-      0,
-      100 - userMessages.length * 2
+    const interventionEfficiency = calculateEfficiency(
+      userMessages.length,
+    );
+    const diagnosisQuality = postMortem
+      ? calculateDiagnosisQuality(postMortem, challenge)
+      : 0;
+    const totalScore = calculateTotalScore(
+      correctness,
+      interventionEfficiency,
+      diagnosisQuality,
+    );
+    const rank = determineRank(
+      totalScore,
+      correctness,
+      interventionEfficiency,
     );
 
-    // Diagnosis quality — placeholder (Arbiter will implement full version)
-    const diagnosisQuality = postMortem ? 70 : 0;
-
-    // Weighted total
-    const totalScore =
-      correctness * 0.5 +
-      interventionEfficiency * 0.3 +
-      diagnosisQuality * 0.2;
-
-    const rank = computeRank(totalScore);
+    const userId = headerUserId ?? session.userId;
 
     // Save score to DB
     await supabase.from("scores").insert({
       session_id: sessionId,
-      user_id: session.userId ?? "anonymous",
+      user_id: userId,
       challenge_id: session.challengeId,
       correctness,
       intervention_efficiency: interventionEfficiency,
@@ -102,9 +108,19 @@ export async function POST(request: NextRequest) {
       .update({ status: "completed", completed_at: new Date().toISOString() })
       .eq("id", sessionId);
 
+    // Fire Inngest event for async scoring (non-fatal on failure)
+    try {
+      await inngest.send({
+        name: "session/completed",
+        data: { sessionId, postMortem },
+      });
+    } catch {
+      // Non-fatal: async scoring is best-effort
+    }
+
     const response: ScoreResponse = {
       correctness,
-      interventionEfficiency: interventionEfficiency,
+      interventionEfficiency,
       diagnosisQuality,
       totalScore,
       rank,

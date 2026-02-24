@@ -9,6 +9,18 @@ import type {
   ScoreResponse,
 } from "@/lib/types";
 
+/** crypto.randomUUID() needs secure context (HTTPS/localhost). Fallback for HTTP. */
+function uuid(): string {
+  try {
+    return crypto.randomUUID();
+  } catch {
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+      const r = (Math.random() * 16) | 0;
+      return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+    });
+  }
+}
+
 interface SessionState {
   sessionId: string | null;
   challengeId: string | null;
@@ -26,10 +38,12 @@ interface SessionState {
   isLoading: boolean;
   isStreaming: boolean;
   score: ScoreResponse | null;
+  error: string | null;
 
   createSession: (challengeId: string) => Promise<void>;
   sendMessage: (text: string) => Promise<void>;
   completeSession: (postMortem: string) => Promise<void>;
+  clearError: () => void;
   reset: () => void;
 }
 
@@ -44,6 +58,7 @@ const initialState = {
   isLoading: false,
   isStreaming: false,
   score: null,
+  error: null,
 };
 
 export const useSessionStore = create<SessionState>((set, get) => ({
@@ -68,8 +83,8 @@ export const useSessionStore = create<SessionState>((set, get) => ({
         testResults: [],
         isLoading: false,
       });
-    } catch {
-      set({ isLoading: false });
+    } catch (err) {
+      set({ isLoading: false, error: err instanceof Error ? err.message : "Failed to create session" });
     }
   },
 
@@ -78,7 +93,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     if (!sessionId) return;
 
     const userMsg: ChatMessage = {
-      id: crypto.randomUUID(),
+      id: uuid(),
       role: "user",
       content: text,
       timestamp: new Date().toISOString(),
@@ -103,7 +118,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let aiContent = "";
-      let aiMsgId = crypto.randomUUID();
+      let aiMsgId = uuid();
       let buffer = "";
 
       while (true) {
@@ -123,7 +138,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
             const evt: { type: SSEEventType; data: unknown } = JSON.parse(raw);
             switch (evt.type) {
               case "ai_message": {
-                aiContent += evt.data as string;
+                aiContent += (evt.data as { text: string }).text;
                 set((s) => {
                   const msgs = [...s.messages];
                   const idx = msgs.findIndex((m) => m.id === aiMsgId);
@@ -143,15 +158,26 @@ export const useSessionStore = create<SessionState>((set, get) => ({
                 break;
               }
               case "tool_call": {
-                const tc = evt.data as ToolCallRecord;
-                set((s) => ({ toolCalls: [...s.toolCalls, tc] }));
+                const tc = evt.data as { toolId: string; name: string };
+                set((s) => ({
+                  toolCalls: [
+                    ...s.toolCalls,
+                    {
+                      id: tc.toolId,
+                      name: tc.name as ToolCallRecord["name"],
+                      input: {},
+                      output: "",
+                      timestamp: new Date().toISOString(),
+                    },
+                  ],
+                }));
                 break;
               }
               case "tool_result": {
-                const tr = evt.data as { id: string; output: string };
+                const tr = evt.data as { toolId: string; output: string };
                 set((s) => ({
                   toolCalls: s.toolCalls.map((tc) =>
-                    tc.id === tr.id ? { ...tc, output: tr.output } : tc
+                    tc.id === tr.toolId ? { ...tc, output: tr.output } : tc
                   ),
                 }));
                 break;
@@ -161,16 +187,20 @@ export const useSessionStore = create<SessionState>((set, get) => ({
                 set((s) => ({ testResults: [...s.testResults, tf] }));
                 break;
               }
+              case "test_feedback_ai": {
+                // No-op on client — this event is for the AI only
+                break;
+              }
               case "code_update": {
                 const cu = evt.data as { path: string; content: string };
-                window.dispatchEvent(
-                  new CustomEvent("code-update", { detail: cu })
-                );
+                // Update codeStore directly
+                const { useCodeStore } = await import("@/stores/codeStore");
+                useCodeStore.getState().updateFile(cu.path, cu.content);
                 break;
               }
               case "similarity_blocked": {
                 const sysMsg: ChatMessage = {
-                  id: crypto.randomUUID(),
+                  id: uuid(),
                   role: "system",
                   content:
                     "Message blocked: too similar to the truth specification. Try rephrasing in your own words.",
@@ -180,7 +210,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
                 break;
               }
               case "done": {
-                aiMsgId = crypto.randomUUID();
+                aiMsgId = uuid();
                 aiContent = "";
                 break;
               }
@@ -208,10 +238,12 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       });
       const data: ScoreResponse = await res.json();
       set({ score: data, status: "completed", isLoading: false });
-    } catch {
-      set({ isLoading: false });
+    } catch (err) {
+      set({ isLoading: false, error: err instanceof Error ? err.message : "Failed to submit score" });
     }
   },
+
+  clearError: () => set({ error: null }),
 
   reset: () => set(initialState),
 }));

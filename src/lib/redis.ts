@@ -29,8 +29,13 @@ export async function cacheSession(sessionId: string, data: unknown) {
 }
 
 export async function getCachedSession(sessionId: string) {
-  const raw = await redis.get<string>(`${SESSION_PREFIX}${sessionId}`);
-  return raw ? JSON.parse(raw) : null;
+  const raw = await redis.get(`${SESSION_PREFIX}${sessionId}`);
+  if (!raw) return null;
+  // Upstash auto-deserializes JSON; handle both string and object
+  if (typeof raw === "string") {
+    return JSON.parse(raw);
+  }
+  return raw;
 }
 
 export async function invalidateSession(sessionId: string) {

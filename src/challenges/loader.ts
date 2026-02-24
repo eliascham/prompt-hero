@@ -24,7 +24,7 @@ export async function loadChallenge(
  * Lists all available challenges with basic info.
  */
 export async function listChallenges(): Promise<
-  Array<{ id: string; title: string; difficulty: string; tags: string[] }>
+  Array<{ id: string; title: string; difficulty: "easy" | "medium" | "hard"; tags: string[]; estimatedMinutes: number }>
 > {
   const entries = await readdir(CHALLENGES_DIR, { withFileTypes: true });
   const challengeDirs = entries
@@ -34,8 +34,9 @@ export async function listChallenges(): Promise<
   const summaries: Array<{
     id: string;
     title: string;
-    difficulty: string;
+    difficulty: "easy" | "medium" | "hard";
     tags: string[];
+    estimatedMinutes: number;
   }> = [];
 
   for (const dir of challengeDirs) {
@@ -49,12 +50,14 @@ export async function listChallenges(): Promise<
         title: string;
         difficulty: string;
         tags: string[];
+        estimatedMinutes?: number;
       };
       summaries.push({
         id: meta.id,
         title: meta.title,
-        difficulty: meta.difficulty,
+        difficulty: (meta.difficulty ?? "medium") as "easy" | "medium" | "hard",
         tags: meta.tags,
+        estimatedMinutes: meta.estimatedMinutes ?? 20,
       });
     } catch {
       // Skip malformed challenge directories

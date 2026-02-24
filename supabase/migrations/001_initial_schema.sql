@@ -16,8 +16,6 @@ create table sessions (
   user_id uuid references auth.users,
   challenge_id text references challenges(id),
   status text default 'active',
-  reveals_used int default 0,
-  max_reveals int default 3,
   messages jsonb[] default '{}',
   tool_calls jsonb[] default '{}',
   test_results jsonb[] default '{}',

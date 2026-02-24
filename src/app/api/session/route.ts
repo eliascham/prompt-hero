@@ -16,6 +16,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Optional auth: extract user from Authorization header if present
+    const authHeader = request.headers.get("authorization");
+    const userId = authHeader?.startsWith("Bearer ")
+      ? authHeader.slice(7)
+      : null;
+
     // Load challenge
     const challenge = await loadChallenge(challengeId);
     if (!challenge) {
@@ -30,6 +36,7 @@ export async function POST(request: NextRequest) {
     const { data: sessionData, error } = await supabase
       .from("sessions")
       .insert({
+        user_id: userId,
         challenge_id: challengeId,
         status: "active",
         messages: [],
@@ -49,7 +56,7 @@ export async function POST(request: NextRequest) {
     // Build session object for cache
     const session: Session = {
       id: sessionData.id,
-      userId: null,
+      userId,
       challengeId,
       status: "active",
       messages: [],

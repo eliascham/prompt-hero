@@ -11,7 +11,7 @@ interface TruthPanelProps {
 export function TruthPanel({ truthSpec }: TruthPanelProps) {
   return (
     <div
-      className="flex h-full flex-col"
+      className="flex h-full min-w-0 flex-col overflow-hidden"
       onContextMenu={(e) => e.preventDefault()}
     >
       <div className="flex items-center justify-between border-b border-border/40 px-4 py-3">

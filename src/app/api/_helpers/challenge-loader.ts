@@ -1,6 +1,6 @@
 import { getServerSupabase } from "@/app/api/_helpers/supabase-helpers";
 import type { Challenge, TruthSpec, AiBrief, ChallengeMeta } from "@/lib/types";
-import { readFile } from "fs/promises";
+import { readFile, readdir } from "fs/promises";
 import { join } from "path";
 
 /**
@@ -57,5 +57,34 @@ async function loadFromFilesystem(
     return JSON.parse(raw) as Challenge;
   } catch {
     return null;
+  }
+}
+
+/**
+ * Loads test files for a challenge from the filesystem.
+ * Returns a map of filename → content.
+ */
+export async function loadChallengeTestFiles(
+  challengeId: string
+): Promise<Record<string, string>> {
+  const testsDir = join(
+    process.cwd(),
+    "src",
+    "challenges",
+    challengeId,
+    "tests"
+  );
+  try {
+    const entries = await readdir(testsDir);
+    const testFiles: Record<string, string> = {};
+    for (const entry of entries) {
+      if (entry.endsWith(".ts") || entry.endsWith(".js")) {
+        const content = await readFile(join(testsDir, entry), "utf-8");
+        testFiles[entry] = content;
+      }
+    }
+    return testFiles;
+  } catch {
+    return {};
   }
 }
