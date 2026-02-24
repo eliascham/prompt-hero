@@ -62,8 +62,8 @@ Copy `.env.local.example` to `.env.local` and fill in:
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
-| `SUPABASE_PUBLISHABLE_KEY` | Yes | Supabase publishable (anon) key |
-| `SUPABASE_SECRET_KEY` | Yes | Supabase secret (service role) key |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anon (publishable) key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role (secret) key |
 | `UPSTASH_REDIS_REST_URL` | Yes | Upstash Redis REST endpoint |
 | `UPSTASH_REDIS_REST_TOKEN` | Yes | Upstash Redis auth token |
 | `ANTHROPIC_API_KEY` | Yes | Anthropic API key for Claude |

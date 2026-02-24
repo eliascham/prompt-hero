@@ -22,6 +22,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { ScoreRank } from "@/lib/types";
+import {
+  getAllTiers,
+  getTierLabel,
+  getTierChallenges,
+} from "@/lib/progress";
 
 type ScoreRow = Database["public"]["Tables"]["scores"]["Row"];
 type ChallengeRow = Database["public"]["Tables"]["challenges"]["Row"];
@@ -240,6 +245,43 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Campaign Progress */}
+        <Card className="border-border/50">
+          <CardHeader>
+            <CardTitle>Campaign Progress</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {getAllTiers().map((tier) => {
+                const tierIds = getTierChallenges(tier);
+                const completedInTier = tierIds.filter((id) =>
+                  scores.some((s) => s.challenge_id === id),
+                ).length;
+                const pct =
+                  tierIds.length > 0
+                    ? (completedInTier / tierIds.length) * 100
+                    : 0;
+                return (
+                  <div key={tier} className="space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">{getTierLabel(tier)}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {completedInTier}/{tierIds.length}
+                      </span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Score History */}
         <Card className="border-border/50">

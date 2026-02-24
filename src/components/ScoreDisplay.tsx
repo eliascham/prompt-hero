@@ -1,11 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import type { ScoreResponse, ScoreRank } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trophy } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Trophy, Home, RotateCcw } from "lucide-react";
 
 interface ScoreDisplayProps {
   score: ScoreResponse;
+  challengeId?: string;
 }
 
 const rankColors: Record<ScoreRank, string> = {
@@ -34,9 +37,9 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
   );
 }
 
-export function ScoreDisplay({ score }: ScoreDisplayProps) {
+export function ScoreDisplay({ score, challengeId }: ScoreDisplayProps) {
   return (
-    <Card className="border-border/50">
+    <Card className="w-full max-w-md border-border/50">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center justify-between text-base">
           <span className="flex items-center gap-2">
@@ -65,6 +68,24 @@ export function ScoreDisplay({ score }: ScoreDisplayProps) {
               {Math.round(score.totalScore)}%
             </span>
           </div>
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex gap-2 pt-2">
+          <Link href="/" className="flex-1">
+            <Button variant="outline" className="w-full gap-2" size="sm">
+              <Home className="h-3.5 w-3.5" />
+              Campaign
+            </Button>
+          </Link>
+          {challengeId && (
+            <Link href={`/challenge/${challengeId}`} className="flex-1">
+              <Button variant="secondary" className="w-full gap-2" size="sm">
+                <RotateCcw className="h-3.5 w-3.5" />
+                Try Again
+              </Button>
+            </Link>
+          )}
         </div>
       </CardContent>
     </Card>

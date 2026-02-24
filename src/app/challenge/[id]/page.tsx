@@ -3,6 +3,7 @@
 import { useEffect, useState, use } from "react";
 import { useSessionStore } from "@/stores/sessionStore";
 import { useCodeStore } from "@/stores/codeStore";
+import { useAuth } from "@/lib/auth-context";
 import { TruthPanel } from "@/components/TruthPanel";
 import { ChatPanel } from "@/components/ChatPanel";
 import { CodeViewer } from "@/components/CodeViewer";
@@ -23,6 +24,7 @@ export default function ChallengePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const { user } = useAuth();
   const {
     challenge,
     status,
@@ -39,8 +41,8 @@ export default function ChallengePage({
   const [showPostMortem, setShowPostMortem] = useState(false);
 
   useEffect(() => {
-    createSession(id);
-  }, [id, createSession]);
+    createSession(id, user?.id);
+  }, [id, createSession, user]);
 
   // Load starter files into code store when session is created
   useEffect(() => {
@@ -72,7 +74,7 @@ export default function ChallengePage({
 
       {status === "completed" && score ? (
         <div className="flex flex-1 items-center justify-center p-8">
-          <ScoreDisplay score={score} />
+          <ScoreDisplay score={score} challengeId={id} />
         </div>
       ) : status === "active" ? (
         <div
@@ -138,7 +140,7 @@ export default function ChallengePage({
               </DialogHeader>
               <PostMortemForm
                 onSubmit={(text) => {
-                  completeSession(text);
+                  completeSession(text, user?.id);
                   setShowPostMortem(false);
                 }}
                 isLoading={isLoading}

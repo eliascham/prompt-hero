@@ -40,9 +40,9 @@ interface SessionState {
   score: ScoreResponse | null;
   error: string | null;
 
-  createSession: (challengeId: string) => Promise<void>;
+  createSession: (challengeId: string, userId?: string | null) => Promise<void>;
   sendMessage: (text: string) => Promise<void>;
-  completeSession: (postMortem: string) => Promise<void>;
+  completeSession: (postMortem: string, userId?: string | null) => Promise<void>;
   clearError: () => void;
   reset: () => void;
 }
@@ -64,12 +64,14 @@ const initialState = {
 export const useSessionStore = create<SessionState>((set, get) => ({
   ...initialState,
 
-  createSession: async (challengeId: string) => {
+  createSession: async (challengeId: string, userId?: string | null) => {
     set({ isLoading: true });
     try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (userId) headers["Authorization"] = `Bearer ${userId}`;
       const res = await fetch("/api/session", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ challengeId }),
       });
       const data: CreateSessionResponse = await res.json();
@@ -225,15 +227,17 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     }
   },
 
-  completeSession: async (postMortem: string) => {
+  completeSession: async (postMortem: string, userId?: string | null) => {
     const { sessionId } = get();
     if (!sessionId) return;
 
     set({ isLoading: true });
     try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (userId) headers["Authorization"] = `Bearer ${userId}`;
       const res = await fetch("/api/score", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ sessionId, postMortem }),
       });
       const data: ScoreResponse = await res.json();
