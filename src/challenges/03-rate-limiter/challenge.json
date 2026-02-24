@@ -7,12 +7,12 @@
     "title": "Rate Limiter",
     "overview": "Implement a rate limiter that uses a sliding window algorithm with per-user AND per-endpoint tracking, backed by a Redis-compatible store interface.",
     "requirements": [
-      { "id": "R1", "text": "Implement sliding window rate limiting (not fixed window)", "revealable": true },
-      { "id": "R2", "text": "Track limits per-user AND per-endpoint (composite key: userId + endpoint)", "revealable": true },
-      { "id": "R3", "text": "Window size: 60 seconds", "revealable": false },
-      { "id": "R4", "text": "Default limit: 100 requests per window per user-endpoint pair", "revealable": false },
-      { "id": "R5", "text": "Return an object with: allowed (boolean), remaining (number), retryAfterMs (number | null)", "revealable": true },
-      { "id": "R6", "text": "Accept a RedisStore interface for storage (get, set, del methods)", "revealable": true }
+      { "id": "R1", "text": "Implement sliding window rate limiting (not fixed window)" },
+      { "id": "R2", "text": "Track limits per-user AND per-endpoint (composite key: userId + endpoint)" },
+      { "id": "R3", "text": "Window size: 60 seconds" },
+      { "id": "R4", "text": "Default limit: 100 requests per window per user-endpoint pair" },
+      { "id": "R5", "text": "Return an object with: allowed (boolean), remaining (number), retryAfterMs (number | null)" },
+      { "id": "R6", "text": "Accept a RedisStore interface for storage (get, set, del methods)" }
     ],
     "edgeCases": [
       "First request from a user-endpoint pair is always allowed",
@@ -53,7 +53,6 @@
   "meta": {
     "estimatedMinutes": 20,
     "optimalMessages": 5,
-    "optimalReveals": 1,
     "flawTypes": ["CTX", "ARCH"]
   }
 }

@@ -5,6 +5,5 @@
   "tags": ["deduplication", "composite-keys", "timestamps", "ordering"],
   "flawTypes": ["RED", "MFEED", "TRAP"],
   "estimatedMinutes": 25,
-  "optimalMessages": 6,
-  "optimalReveals": 2
+  "optimalMessages": 6
 }

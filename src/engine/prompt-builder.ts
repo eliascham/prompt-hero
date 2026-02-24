@@ -1,4 +1,4 @@
-import type { AiBrief, Reveal } from "@/lib/types";
+import type { AiBrief } from "@/lib/types";
 
 const SYSTEM_PROMPT_TEMPLATE = `You are a senior software engineer working on a project. You have been given
 requirements and a partial codebase. Your job is to complete the implementation
@@ -33,21 +33,7 @@ function formatBrief(brief: AiBrief): string {
   return lines.join("\n");
 }
 
-function formatReveals(reveals: Reveal[]): string {
-  if (reveals.length === 0) return "";
-  const lines = reveals.map(
-    (r) => `Updated requirement from stakeholder: ${r.snippet}`
-  );
-  return "\n\n---\nStakeholder updates:\n" + lines.join("\n");
-}
-
-export function buildSystemPrompt(
-  aiBrief: AiBrief,
-  reveals: Reveal[]
-): string {
+export function buildSystemPrompt(aiBrief: AiBrief): string {
   const briefText = formatBrief(aiBrief);
-  const revealsText = formatReveals(reveals);
-  return (
-    SYSTEM_PROMPT_TEMPLATE.replace("{{AI_BRIEF}}", briefText) + revealsText
-  );
+  return SYSTEM_PROMPT_TEMPLATE.replace("{{AI_BRIEF}}", briefText);
 }

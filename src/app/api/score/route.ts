@@ -51,8 +51,6 @@ export async function POST(request: NextRequest) {
         userId: data.user_id,
         challengeId: data.challenge_id,
         status: data.status as Session["status"],
-        revealsUsed: data.reveals_used,
-        maxReveals: data.max_reveals,
         messages: data.messages as Session["messages"],
         toolCalls: data.tool_calls as Session["toolCalls"],
         testResults: data.test_results as Session["testResults"],
@@ -72,7 +70,7 @@ export async function POST(request: NextRequest) {
     const userMessages = session.messages.filter((m) => m.role === "user");
     const interventionEfficiency = Math.max(
       0,
-      100 - session.revealsUsed * 15 - userMessages.length * 2
+      100 - userMessages.length * 2
     );
 
     // Diagnosis quality — placeholder (Arbiter will implement full version)

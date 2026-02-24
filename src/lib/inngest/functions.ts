@@ -58,7 +58,6 @@ export const scoreSession = inngest.createFunction(
 
     const correctness = calculateCorrectness(testResults);
     const efficiency = calculateEfficiency(
-      session.reveals_used,
       userMessages.length,
     );
     const diagnosis = calculateDiagnosisQuality(postMortem, {
@@ -72,7 +71,6 @@ export const scoreSession = inngest.createFunction(
       meta: (challenge.meta as unknown as Challenge["meta"]) ?? {
         estimatedMinutes: 30,
         optimalMessages: 5,
-        optimalReveals: 0,
         flawTypes: [],
       },
     });
@@ -80,7 +78,6 @@ export const scoreSession = inngest.createFunction(
     const rank = determineRank(
       totalScore,
       correctness,
-      session.reveals_used,
       efficiency,
     );
 

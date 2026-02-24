@@ -32,8 +32,6 @@ export async function POST(request: NextRequest) {
       .insert({
         challenge_id: challengeId,
         status: "active",
-        reveals_used: 0,
-        max_reveals: 3,
         messages: [],
         tool_calls: [],
         test_results: [],
@@ -54,8 +52,6 @@ export async function POST(request: NextRequest) {
       userId: null,
       challengeId,
       status: "active",
-      revealsUsed: 0,
-      maxReveals: 3,
       messages: [],
       toolCalls: [],
       testResults: [],
@@ -76,7 +72,6 @@ export async function POST(request: NextRequest) {
         truthSpec: challenge.truthSpec,
         starterFiles: challenge.starterCode,
       },
-      revealBudget: 3,
     };
 
     return NextResponse.json(response);

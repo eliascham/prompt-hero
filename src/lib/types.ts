@@ -25,7 +25,6 @@ export interface TruthSpec {
 export interface TruthRequirement {
   id: string;
   text: string;
-  revealable: boolean;
 }
 
 export interface AiBrief {
@@ -57,7 +56,6 @@ export type FlawType =
 export interface ChallengeMeta {
   estimatedMinutes: number;
   optimalMessages: number;
-  optimalReveals: number;
   flawTypes: FlawType[];
 }
 
@@ -67,8 +65,6 @@ export interface Session {
   userId: string | null;
   challengeId: string;
   status: SessionStatus;
-  revealsUsed: number;
-  maxReveals: number;
   messages: ChatMessage[];
   toolCalls: ToolCallRecord[];
   testResults: TestResult[];
@@ -131,13 +127,6 @@ export interface TestFeedbackAI {
   direction: string; // e.g. "output format incorrect" — no raw data
 }
 
-// ---------- Reveal ----------
-export interface Reveal {
-  snippet: string;           // sentence-level from Truth panel
-  injectedAs: string;        // "Updated requirement from stakeholder: ..."
-  timestamp: string;
-}
-
 // ---------- Scoring ----------
 export interface Score {
   id: string;
@@ -171,7 +160,6 @@ export interface CreateSessionResponse {
     truthSpec: TruthSpec;
     starterFiles: Record<string, string>;
   };
-  revealBudget: number;
 }
 
 // POST /api/chat
@@ -180,17 +168,6 @@ export interface ChatRequest {
   message: string;
 }
 // Response: SSE stream
-
-// POST /api/reveal
-export interface RevealRequest {
-  sessionId: string;
-  snippet: string;
-}
-
-export interface RevealResponse {
-  revealsRemaining: number;
-  injectedAs: string;
-}
 
 // POST /api/score
 export interface ScoreRequest {

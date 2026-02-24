@@ -7,12 +7,12 @@
     "title": "Log Aggregator",
     "overview": "Build a log aggregator that processes newline-delimited JSON logs, aggregates by service and level, calculates error rates, and handles timezone normalization.",
     "requirements": [
-      { "id": "R1", "text": "Accept newline-delimited JSON (NDJSON) input — each line is one JSON log entry", "revealable": true },
-      { "id": "R2", "text": "Each log entry has: service, level (info/warn/error/debug), message, timestamp (ISO 8601 with timezone)", "revealable": false },
-      { "id": "R3", "text": "Aggregate logs by service + level combination", "revealable": false },
-      { "id": "R4", "text": "Calculate error rate per service: (error count / total count for that service) × 100, as a percentage", "revealable": true },
-      { "id": "R5", "text": "Normalize all timestamps to UTC before aggregation (inputs may have various timezone offsets)", "revealable": true },
-      { "id": "R6", "text": "Handle malformed lines gracefully — skip them and count them in a malformedCount field", "revealable": true }
+      { "id": "R1", "text": "Accept newline-delimited JSON (NDJSON) input — each line is one JSON log entry" },
+      { "id": "R2", "text": "Each log entry has: service, level (info/warn/error/debug), message, timestamp (ISO 8601 with timezone)" },
+      { "id": "R3", "text": "Aggregate logs by service + level combination" },
+      { "id": "R4", "text": "Calculate error rate per service: (error count / total count for that service) × 100, as a percentage" },
+      { "id": "R5", "text": "Normalize all timestamps to UTC before aggregation (inputs may have various timezone offsets)" },
+      { "id": "R6", "text": "Handle malformed lines gracefully — skip them and count them in a malformedCount field" }
     ],
     "edgeCases": [
       "Empty input returns zero counts",
@@ -60,7 +60,6 @@
   "meta": {
     "estimatedMinutes": 25,
     "optimalMessages": 6,
-    "optimalReveals": 2,
     "flawTypes": ["ARCH", "ENV", "OBFIX"]
   }
 }

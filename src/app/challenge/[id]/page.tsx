@@ -21,12 +21,9 @@ export default function ChallengePage({
   const {
     challenge,
     status,
-    revealsUsed,
-    maxReveals,
     isLoading,
     score,
     createSession,
-    requestReveal,
     completeSession,
   } = useSessionStore();
   const setFiles = useCodeStore((s) => s.setFiles);
@@ -54,13 +51,7 @@ export default function ChallengePage({
     <div className="flex h-[calc(100vh-3.5rem)]">
       {/* Left Panel — Truth */}
       <div className="w-[40%] min-w-[320px] border-r border-border/40 bg-card/30">
-        <TruthPanel
-          truthSpec={challenge.truthSpec}
-          revealsUsed={revealsUsed}
-          maxReveals={maxReveals}
-          onReveal={requestReveal}
-          isLoading={isLoading}
-        />
+        <TruthPanel truthSpec={challenge.truthSpec} />
       </div>
 
       {/* Right Panel — Chat + Code */}

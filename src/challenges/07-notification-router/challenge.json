@@ -7,12 +7,12 @@
     "title": "Notification Router",
     "overview": "Build a notification routing system that sends notifications through appropriate channels based on priority level, with user opt-out support.",
     "requirements": [
-      { "id": "R1", "text": "Accept a notification with: userId, priority (critical/high/medium/low), message", "revealable": false },
-      { "id": "R2", "text": "Route critical → SMS + email + push, high → SMS + email, medium → email + push, low → push only", "revealable": true },
-      { "id": "R3", "text": "Accept user preferences with opted-out channels", "revealable": true },
-      { "id": "R4", "text": "Users can opt out of channels but cannot add channels beyond their priority level", "revealable": true },
-      { "id": "R5", "text": "Return the list of channels the notification was actually sent through", "revealable": false },
-      { "id": "R6", "text": "If all channels are opted out, return empty array (notification is silently dropped)", "revealable": true }
+      { "id": "R1", "text": "Accept a notification with: userId, priority (critical/high/medium/low), message" },
+      { "id": "R2", "text": "Route critical → SMS + email + push, high → SMS + email, medium → email + push, low → push only" },
+      { "id": "R3", "text": "Accept user preferences with opted-out channels" },
+      { "id": "R4", "text": "Users can opt out of channels but cannot add channels beyond their priority level" },
+      { "id": "R5", "text": "Return the list of channels the notification was actually sent through" },
+      { "id": "R6", "text": "If all channels are opted out, return empty array (notification is silently dropped)" }
     ],
     "edgeCases": [
       "User opts out of all channels → empty send list",
@@ -58,7 +58,6 @@
   "meta": {
     "estimatedMinutes": 22,
     "optimalMessages": 5,
-    "optimalReveals": 2,
     "flawTypes": ["CONTRA", "OBFIX", "AMB"]
   }
 }

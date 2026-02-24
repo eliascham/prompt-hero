@@ -7,11 +7,11 @@
     "title": "Leaderboard Ranking",
     "overview": "Implement a leaderboard ranking system that sorts players by score with specific tiebreaking rules.",
     "requirements": [
-      { "id": "R1", "text": "Accept an array of player objects with: name, score, gamesPlayed", "revealable": false },
-      { "id": "R2", "text": "Sort players by score in descending order (highest first)", "revealable": false },
-      { "id": "R3", "text": "For tied scores, rank by fewest games played first (efficiency tiebreaker)", "revealable": true },
-      { "id": "R4", "text": "For ties in both score and games, sort alphabetically by name", "revealable": true },
-      { "id": "R5", "text": "Assign rank numbers (1-based) — tied players get the same rank, next rank skips", "revealable": true }
+      { "id": "R1", "text": "Accept an array of player objects with: name, score, gamesPlayed" },
+      { "id": "R2", "text": "Sort players by score in descending order (highest first)" },
+      { "id": "R3", "text": "For tied scores, rank by fewest games played first (efficiency tiebreaker)" },
+      { "id": "R4", "text": "For ties in both score and games, sort alphabetically by name" },
+      { "id": "R5", "text": "Assign rank numbers (1-based) — tied players get the same rank, next rank skips" }
     ],
     "edgeCases": [
       "Empty input returns empty array",
@@ -52,7 +52,6 @@
   "meta": {
     "estimatedMinutes": 12,
     "optimalMessages": 3,
-    "optimalReveals": 1,
     "flawTypes": ["CTX", "AMB"]
   }
 }

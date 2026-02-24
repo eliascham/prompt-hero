@@ -5,6 +5,5 @@
   "tags": ["yaml", "migration", "config", "nested-objects"],
   "flawTypes": ["CTX", "HALL", "ENV"],
   "estimatedMinutes": 18,
-  "optimalMessages": 5,
-  "optimalReveals": 1
+  "optimalMessages": 5
 }

@@ -5,6 +5,5 @@
   "tags": ["routing", "notifications", "opt-out", "priority"],
   "flawTypes": ["CONTRA", "OBFIX", "AMB"],
   "estimatedMinutes": 22,
-  "optimalMessages": 5,
-  "optimalReveals": 2
+  "optimalMessages": 5
 }

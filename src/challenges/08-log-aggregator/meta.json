@@ -5,6 +5,5 @@
   "tags": ["logs", "aggregation", "json", "timezones", "error-rate"],
   "flawTypes": ["ARCH", "ENV", "OBFIX"],
   "estimatedMinutes": 25,
-  "optimalMessages": 6,
-  "optimalReveals": 2
+  "optimalMessages": 6
 }

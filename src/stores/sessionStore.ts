@@ -20,8 +20,6 @@ interface SessionState {
     starterFiles: Record<string, string>;
   } | null;
   status: "idle" | "active" | "completed";
-  revealsUsed: number;
-  maxReveals: number;
   messages: ChatMessage[];
   toolCalls: ToolCallRecord[];
   testResults: TestResult[];
@@ -31,7 +29,6 @@ interface SessionState {
 
   createSession: (challengeId: string) => Promise<void>;
   sendMessage: (text: string) => Promise<void>;
-  requestReveal: (snippet: string) => Promise<void>;
   completeSession: (postMortem: string) => Promise<void>;
   reset: () => void;
 }
@@ -41,8 +38,6 @@ const initialState = {
   challengeId: null,
   challenge: null,
   status: "idle" as const,
-  revealsUsed: 0,
-  maxReveals: 3,
   messages: [],
   toolCalls: [],
   testResults: [],
@@ -67,8 +62,6 @@ export const useSessionStore = create<SessionState>((set, get) => ({
         sessionId: data.sessionId,
         challengeId: data.challenge.id,
         challenge: data.challenge,
-        maxReveals: data.revealBudget,
-        revealsUsed: 0,
         status: "active",
         messages: [],
         toolCalls: [],
@@ -170,7 +163,6 @@ export const useSessionStore = create<SessionState>((set, get) => ({
               }
               case "code_update": {
                 const cu = evt.data as { path: string; content: string };
-                // Dispatch to codeStore via window event
                 window.dispatchEvent(
                   new CustomEvent("code-update", { detail: cu })
                 );
@@ -200,35 +192,6 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       }
     } finally {
       set({ isStreaming: false });
-    }
-  },
-
-  requestReveal: async (snippet: string) => {
-    const { sessionId } = get();
-    if (!sessionId) return;
-
-    set({ isLoading: true });
-    try {
-      const res = await fetch("/api/reveal", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, snippet }),
-      });
-      const data = await res.json();
-      set({
-        revealsUsed: get().maxReveals - data.revealsRemaining,
-        isLoading: false,
-      });
-
-      const sysMsg: ChatMessage = {
-        id: crypto.randomUUID(),
-        role: "system",
-        content: `Reveal sent to AI as: "${data.injectedAs}"`,
-        timestamp: new Date().toISOString(),
-      };
-      set((s) => ({ messages: [...s.messages, sysMsg] }));
-    } catch {
-      set({ isLoading: false });
     }
   },
 
