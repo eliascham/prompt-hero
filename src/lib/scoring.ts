@@ -10,13 +10,11 @@ export function calculateCorrectness(testResults: TestResult[]): number {
 }
 
 /**
- * Efficiency = max(0, 100 - (reveals × 15) - (messages × 2))
+ * Efficiency = max(0, 100 - (messages × 2))
+ * Fewer messages = higher efficiency.
  */
-export function calculateEfficiency(
-  revealsUsed: number,
-  messageCount: number,
-): number {
-  return Math.max(0, 100 - revealsUsed * 15 - messageCount * 2);
+export function calculateEfficiency(messageCount: number): number {
+  return Math.max(0, 100 - messageCount * 2);
 }
 
 /**
@@ -64,7 +62,6 @@ function extractKeywords(description: string): string[] {
     .split(/\s+/)
     .filter((w) => w.length > 2 && !stopWords.has(w));
 
-  // Return individual meaningful words and 2-word phrases
   const phrases: string[] = [];
   for (let i = 0; i < words.length - 1; i++) {
     phrases.push(`${words[i]} ${words[i + 1]}`);
@@ -86,19 +83,17 @@ export function calculateTotalScore(
 
 /**
  * Determine rank based on total score and conditions.
- * S: ≥95 AND 100% correctness AND 0 reveals AND efficiency > 80
+ * S: ≥95 AND 100% correctness AND efficiency > 80
  * A: ≥85, B: ≥70, C: ≥55, D: ≥40, F: <40
  */
 export function determineRank(
   totalScore: number,
   correctness: number,
-  revealsUsed: number,
   efficiency: number,
 ): ScoreRank {
   if (
     totalScore >= 95 &&
     correctness === 100 &&
-    revealsUsed === 0 &&
     efficiency > 80
   ) {
     return "S";

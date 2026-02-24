@@ -7,12 +7,12 @@
     "title": "Event Deduplicator",
     "overview": "Build an event deduplicator that identifies duplicate events using a composite key and preserves original ordering.",
     "requirements": [
-      { "id": "R1", "text": "Accept an array of event objects with: id, source, eventType, timestamp, payload", "revealable": false },
-      { "id": "R2", "text": "Deduplicate using composite key: source + eventType + timestamp within 5-second window", "revealable": true },
-      { "id": "R3", "text": "Events with the same source, eventType, and timestamps within 5 seconds of each other are duplicates", "revealable": true },
-      { "id": "R4", "text": "Keep the first occurrence, discard later duplicates", "revealable": false },
-      { "id": "R5", "text": "Preserve original array order in output", "revealable": false },
-      { "id": "R6", "text": "The id field is NOT used for deduplication (it's a red herring)", "revealable": true }
+      { "id": "R1", "text": "Accept an array of event objects with: id, source, eventType, timestamp, payload" },
+      { "id": "R2", "text": "Deduplicate using composite key: source + eventType + timestamp within 5-second window" },
+      { "id": "R3", "text": "Events with the same source, eventType, and timestamps within 5 seconds of each other are duplicates" },
+      { "id": "R4", "text": "Keep the first occurrence, discard later duplicates" },
+      { "id": "R5", "text": "Preserve original array order in output" },
+      { "id": "R6", "text": "The id field is NOT used for deduplication (it's a red herring)" }
     ],
     "edgeCases": [
       "Events with same id but different source/type/time are NOT duplicates",
@@ -60,7 +60,6 @@
   "meta": {
     "estimatedMinutes": 25,
     "optimalMessages": 6,
-    "optimalReveals": 2,
     "flawTypes": ["RED", "MFEED", "TRAP"]
   }
 }

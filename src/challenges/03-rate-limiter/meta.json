@@ -5,6 +5,5 @@
   "tags": ["rate-limiting", "sliding-window", "redis", "api"],
   "flawTypes": ["CTX", "ARCH"],
   "estimatedMinutes": 20,
-  "optimalMessages": 5,
-  "optimalReveals": 1
+  "optimalMessages": 5
 }

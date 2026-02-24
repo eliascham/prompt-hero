@@ -89,6 +89,12 @@ export default function LoginPage() {
               Sign up
             </Link>
           </p>
+          <Link
+            href="/"
+            className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+          >
+            Continue as guest
+          </Link>
         </CardFooter>
       </form>
     </Card>

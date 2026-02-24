@@ -32,8 +32,6 @@ interface SessionState {
     starterFiles: Record<string, string>;
   } | null;
   status: "idle" | "active" | "completed";
-  revealsUsed: number;
-  maxReveals: number;
   messages: ChatMessage[];
   toolCalls: ToolCallRecord[];
   testResults: TestResult[];
@@ -42,10 +40,9 @@ interface SessionState {
   score: ScoreResponse | null;
   error: string | null;
 
-  createSession: (challengeId: string) => Promise<void>;
+  createSession: (challengeId: string, userId?: string | null) => Promise<void>;
   sendMessage: (text: string) => Promise<void>;
-  requestReveal: (snippet: string) => Promise<void>;
-  completeSession: (postMortem: string) => Promise<void>;
+  completeSession: (postMortem: string, userId?: string | null) => Promise<void>;
   clearError: () => void;
   reset: () => void;
 }
@@ -55,8 +52,6 @@ const initialState = {
   challengeId: null,
   challenge: null,
   status: "idle" as const,
-  revealsUsed: 0,
-  maxReveals: 3,
   messages: [],
   toolCalls: [],
   testResults: [],
@@ -69,12 +64,14 @@ const initialState = {
 export const useSessionStore = create<SessionState>((set, get) => ({
   ...initialState,
 
-  createSession: async (challengeId: string) => {
+  createSession: async (challengeId: string, userId?: string | null) => {
     set({ isLoading: true });
     try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (userId) headers["Authorization"] = `Bearer ${userId}`;
       const res = await fetch("/api/session", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ challengeId }),
       });
       const data: CreateSessionResponse = await res.json();
@@ -82,8 +79,6 @@ export const useSessionStore = create<SessionState>((set, get) => ({
         sessionId: data.sessionId,
         challengeId: data.challenge.id,
         challenge: data.challenge,
-        maxReveals: data.revealBudget,
-        revealsUsed: 0,
         status: "active",
         messages: [],
         toolCalls: [],
@@ -232,44 +227,17 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     }
   },
 
-  requestReveal: async (snippet: string) => {
+  completeSession: async (postMortem: string, userId?: string | null) => {
     const { sessionId } = get();
     if (!sessionId) return;
 
     set({ isLoading: true });
     try {
-      const res = await fetch("/api/reveal", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, snippet }),
-      });
-      const data = await res.json();
-      set({
-        revealsUsed: get().maxReveals - data.revealsRemaining,
-        isLoading: false,
-      });
-
-      const sysMsg: ChatMessage = {
-        id: uuid(),
-        role: "system",
-        content: `Reveal sent to AI as: "${data.injectedAs}"`,
-        timestamp: new Date().toISOString(),
-      };
-      set((s) => ({ messages: [...s.messages, sysMsg] }));
-    } catch (err) {
-      set({ isLoading: false, error: err instanceof Error ? err.message : "Failed to send reveal" });
-    }
-  },
-
-  completeSession: async (postMortem: string) => {
-    const { sessionId } = get();
-    if (!sessionId) return;
-
-    set({ isLoading: true });
-    try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (userId) headers["Authorization"] = `Bearer ${userId}`;
       const res = await fetch("/api/score", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ sessionId, postMortem }),
       });
       const data: ScoreResponse = await res.json();

@@ -15,7 +15,6 @@ import type {
   Session,
   ChatMessage,
   SSEEventType,
-  Reveal,
 } from "@/lib/types";
 
 const MIN_MESSAGE_LENGTH = 1;
@@ -95,8 +94,6 @@ async function loadSession(sessionId: string): Promise<Session | null> {
     userId: data.user_id,
     challengeId: data.challenge_id,
     status: data.status as Session["status"],
-    revealsUsed: data.reveals_used,
-    maxReveals: data.max_reveals,
     messages: data.messages as Session["messages"],
     toolCalls: data.tool_calls as Session["toolCalls"],
     testResults: data.test_results as Session["testResults"],
@@ -189,27 +186,11 @@ export async function POST(request: NextRequest) {
   };
   session.messages.push(userMessage);
 
-  // Extract reveals from system messages
-  const reveals: Reveal[] = session.messages
-    .filter(
-      (m) =>
-        m.role === "system" &&
-        m.content.startsWith("Updated requirement from stakeholder:")
-    )
-    .map((m) => ({
-      snippet: m.content.replace(
-        "Updated requirement from stakeholder: ",
-        ""
-      ),
-      injectedAs: m.content,
-      timestamp: m.timestamp,
-    }));
-
   // Load test files for sandbox execution
   const testFiles = await loadChallengeTestFiles(session.challengeId);
 
   // Build system prompt using AI brief (NEVER truth spec)
-  const systemPrompt = buildSystemPrompt(challenge.aiBrief, reveals);
+  const systemPrompt = buildSystemPrompt(challenge.aiBrief);
 
   // Build conversation history for Anthropic API
   const anthropicMessages: Anthropic.MessageParam[] = session.messages

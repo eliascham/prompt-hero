@@ -7,12 +7,12 @@
     "title": "Config File Migration",
     "overview": "Migrate YAML configuration files from v1 format to v2 format, with specific restructuring rules.",
     "requirements": [
-      { "id": "R1", "text": "Accept a v1 YAML config string and return a v2 YAML config string", "revealable": false },
-      { "id": "R2", "text": "Nest database-related keys (host, port, name, user, password) under services.database", "revealable": true },
-      { "id": "R3", "text": "Rename log_level to logging.verbosity (nested under logging key)", "revealable": true },
-      { "id": "R4", "text": "Set version: 2 at the root level", "revealable": false },
-      { "id": "R5", "text": "Preserve all other top-level keys unchanged", "revealable": true },
-      { "id": "R6", "text": "Output valid YAML", "revealable": false }
+      { "id": "R1", "text": "Accept a v1 YAML config string and return a v2 YAML config string" },
+      { "id": "R2", "text": "Nest database-related keys (host, port, name, user, password) under services.database" },
+      { "id": "R3", "text": "Rename log_level to logging.verbosity (nested under logging key)" },
+      { "id": "R4", "text": "Set version: 2 at the root level" },
+      { "id": "R5", "text": "Preserve all other top-level keys unchanged" },
+      { "id": "R6", "text": "Output valid YAML" }
     ],
     "edgeCases": [
       "v1 config may not have all database keys — migrate only those present",
@@ -67,7 +67,6 @@
   "meta": {
     "estimatedMinutes": 18,
     "optimalMessages": 5,
-    "optimalReveals": 1,
     "flawTypes": ["CTX", "HALL", "ENV"]
   }
 }

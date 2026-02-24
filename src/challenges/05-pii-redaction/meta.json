@@ -5,6 +5,5 @@
   "tags": ["regex", "privacy", "text-processing", "pii"],
   "flawTypes": ["CTX", "MFEED"],
   "estimatedMinutes": 15,
-  "optimalMessages": 4,
-  "optimalReveals": 1
+  "optimalMessages": 4
 }

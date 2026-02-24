@@ -6,7 +6,7 @@ An AI-in-the-middle challenge platform where you steer a flawed AI coding agent 
 
 You see the **true requirements**. The AI sees a **flawed brief**. Neither side sees the other's information. Your job: watch the AI code, diagnose what it's getting wrong, and guide it to the correct solution through free-text chat — without copy-pasting the answer.
 
-**Observe** the AI read files, write code, and run tests. **Diagnose** what its flawed brief must say based on its behavior. **Intervene** with chat messages or spend a reveal (3 per challenge) to inject a truth sentence as a "stakeholder clarification."
+**Observe** the AI read files, write code, and run tests. **Diagnose** what its flawed brief must say based on its behavior. **Intervene** with chat messages to steer the AI toward the correct solution.
 
 ## Tech Stack
 
@@ -62,8 +62,8 @@ Copy `.env.local.example` to `.env.local` and fill in:
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
-| `SUPABASE_PUBLISHABLE_KEY` | Yes | Supabase publishable (anon) key |
-| `SUPABASE_SECRET_KEY` | Yes | Supabase secret (service role) key |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anon (publishable) key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role (secret) key |
 | `UPSTASH_REDIS_REST_URL` | Yes | Upstash Redis REST endpoint |
 | `UPSTASH_REDIS_REST_TOKEN` | Yes | Upstash Redis auth token |
 | `ANTHROPIC_API_KEY` | Yes | Anthropic API key for Claude |
@@ -85,7 +85,6 @@ src/
 │   └── api/
 │       ├── chat/route.ts           # SSE streaming + agentic tool loop
 │       ├── session/route.ts        # Create/load challenge sessions
-│       ├── reveal/route.ts         # Spend reveal budget
 │       ├── score/route.ts          # Compute final score
 │       └── inngest/route.ts        # Async job endpoint
 ├── components/                     # React UI components
@@ -95,17 +94,15 @@ src/
 │   ├── CodeViewer.tsx              # Center column — Monaco editor (read-only + diff + line selection)
 │   ├── PostMortemForm.tsx          # Post-mortem dialog form
 │   ├── ToolCallCard.tsx            # AI tool invocation display
-│   ├── RevealButton.tsx            # Reveal budget controls
 │   ├── ScoreDisplay.tsx            # Final score + S-F rank
 │   └── ui/                         # shadcn/ui primitives
 ├── engine/                         # Asymmetry & AI orchestration
 │   ├── prompt-builder.ts           # Build AI system prompt from flawed brief
 │   ├── tool-executor.ts            # Execute tools (E2B sandbox or mock)
-│   ├── reveal-handler.ts           # Inject truth as "stakeholder clarification"
 │   ├── feedback-filter.ts          # Strip test output to category + direction
 │   └── similarity.ts               # Block messages too similar to truth
 ├── stores/                         # Zustand state management
-│   ├── sessionStore.ts             # Session, messages, reveals, errors
+│   ├── sessionStore.ts             # Session, messages, errors
 │   └── codeStore.ts                # File contents for code viewer
 ├── lib/                            # Infrastructure & utilities
 │   ├── db/index.ts                 # Supabase client
@@ -129,7 +126,7 @@ src/
 ## API Routes
 
 ### `POST /api/session`
-Create a new challenge session. Returns session ID, truth spec, starter files, and reveal budget. The AI brief is **never** sent to the client.
+Create a new challenge session. Returns session ID, truth spec, and starter files. The AI brief is **never** sent to the client.
 
 ### `POST /api/chat`
 Send a free-text message. Returns an SSE stream with events:
@@ -142,9 +139,6 @@ Send a free-text message. Returns an SSE stream with events:
 
 The chat route implements an **agentic tool-use loop**: Claude can call tools (read/write files, run commands, run tests), receive results, and continue reasoning — up to 10 rounds per message.
 
-### `POST /api/reveal`
-Spend a reveal from the budget (max 3). The selected truth sentence is injected into the AI's conversation as: *"Updated requirement from stakeholder: ..."*
-
 ### `POST /api/score`
 Submit a post-mortem diagnosis. Returns weighted score breakdown and rank (S through F).
 
@@ -153,9 +147,9 @@ Submit a post-mortem diagnosis. Returns weighted score breakdown and rank (S thr
 | Component | Weight | Formula |
 |-----------|--------|---------|
 | Correctness | 50% | (hidden tests passed / total) x 100 |
-| Intervention Efficiency | 30% | 100 - (reveals x 15) - (messages x 2) |
+| Intervention Efficiency | 30% | 100 - (messages x 2) |
 | Diagnosis Quality | 20% | Post-mortem accuracy vs known flaws |
-| **S-Rank** | — | 100% correctness + 0 reveals + efficiency > 80 |
+| **S-Rank** | — | 100% correctness + efficiency > 80 + accurate diagnosis |
 
 ## Challenges
 
@@ -184,7 +178,7 @@ Submit a post-mortem diagnosis. Returns weighted score breakdown and rank (S thr
 Three tables in Supabase (Postgres):
 
 - **`challenges`** — ID, title, difficulty, tags, truth_spec (JSONB), ai_brief (JSONB), starter_code, meta
-- **`sessions`** — UUID, user_id, challenge_id, status, reveals_used, messages[], tool_calls[], test_results[]
+- **`sessions`** — UUID, user_id, challenge_id, status, messages[], tool_calls[], test_results[]
 - **`scores`** — session_id, correctness, intervention_efficiency, diagnosis_quality, total_score, post_mortem
 
 Full migration: `supabase/migration.sql`
@@ -226,7 +220,7 @@ The core game mechanic relies on strict separation:
 - **Server** holds both truth spec and AI brief
 - **Client** receives only truth spec (via `/api/session`)
 - **Claude** receives only AI brief (via system prompt in `/api/chat`)
-- Reveals bridge the gap by injecting truth sentences as "stakeholder clarifications"
+- The user must bridge the gap through pure conversation — no reveals or shortcuts
 
 ## Scripts
 

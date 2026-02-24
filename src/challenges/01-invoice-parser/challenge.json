@@ -7,12 +7,12 @@
     "title": "Invoice Line Item Parser",
     "overview": "Build a parser that reads CSV invoice data and produces structured JSON output with correct tax calculations and date formatting.",
     "requirements": [
-      { "id": "R1", "text": "Parse CSV input with columns: item_name, quantity, unit_price, date", "revealable": true },
-      { "id": "R2", "text": "Calculate line totals as quantity × unit_price", "revealable": false },
-      { "id": "R3", "text": "Apply compound tax for line items over $1000: 8% state tax on subtotal, then 2% city tax on (subtotal + state tax)", "revealable": true },
-      { "id": "R4", "text": "Apply simple 8% tax for line items $1000 or under", "revealable": true },
-      { "id": "R5", "text": "Format all dates as ISO 8601 (YYYY-MM-DDTHH:mm:ssZ)", "revealable": true },
-      { "id": "R6", "text": "Output JSON array of line items with: item_name, quantity, unit_price, subtotal, tax, total, date", "revealable": false }
+      { "id": "R1", "text": "Parse CSV input with columns: item_name, quantity, unit_price, date" },
+      { "id": "R2", "text": "Calculate line totals as quantity × unit_price" },
+      { "id": "R3", "text": "Apply compound tax for line items over $1000: 8% state tax on subtotal, then 2% city tax on (subtotal + state tax)" },
+      { "id": "R4", "text": "Apply simple 8% tax for line items $1000 or under" },
+      { "id": "R5", "text": "Format all dates as ISO 8601 (YYYY-MM-DDTHH:mm:ssZ)" },
+      { "id": "R6", "text": "Output JSON array of line items with: item_name, quantity, unit_price, subtotal, tax, total, date" }
     ],
     "edgeCases": [
       "Handle quoted CSV fields that contain commas",
@@ -53,7 +53,6 @@
   "meta": {
     "estimatedMinutes": 15,
     "optimalMessages": 4,
-    "optimalReveals": 1,
     "flawTypes": ["CTX", "MFEED"]
   }
 }

@@ -3,12 +3,24 @@
 ## Overview
 Web-based challenge platform where the human sees the *true* problem requirements and must steer an AI coding session to a correct outcome. The AI works from a flawed brief that **neither the AI nor the user can directly read** — the user must discover what's wrong by observing the AI's behavior, then guide it via conversation.
 
+## Product Vision
+
+### Tagline: "The game where your code is your conversation."
+
+### Three Modes (ship order)
+1. **V1: Campaign (solo)** — Progressive difficulty, multi-stage challenges, pure conversation
+2. **V2: Arena (1v1 competitive)** — Race to Correct, Prompt Golf, Adversary modes
+3. **V3: Workshop (community)** — User-generated challenges
+
+### Differentiation
+The skill being tested doesn't exist on any other platform: diagnosing AI misunderstandings and efficiently correcting them through conversation. LeetCode tests coding, CodeWars tests algorithms, Advent of Code tests puzzles. Prompt Hero tests AI collaboration.
+
 ## Core Mechanic
 - **Two-plane spec**: Truth (authoritative) + AI Brief (flawed)
 - **Human sees**: only the Truth spec + AI session transcript + repo state
 - **AI sees**: only its flawed brief + repo + chat history
 - **Neither side** sees the other's information — user must *infer* the AI's flawed beliefs from its behavior
-- **Reveal budget**: 3 reveals per challenge (sentence-level from Truth panel)
+- **No reveals** — pure conversation only. No safety net.
 - **Free-text only**: no structured action buttons — pure conversation is the only interaction mode
 - **Character cap**: 280-500 chars per message
 - **Scoring**: correctness 50%, intervention efficiency 30%, diagnosis quality 20%
@@ -16,7 +28,13 @@ Web-based challenge platform where the human sees the *true* problem requirement
 ## Gameplay Loop
 1. **Observe** — Watch AI read code, write code, run tests. Notice when behavior diverges from Truth spec
 2. **Diagnose** — Infer what the AI's flawed brief must say based on its behavior
-3. **Intervene** — Use free-text chat or a Reveal to steer toward correct behavior
+3. **Intervene** — Use free-text chat to steer toward correct behavior
+
+## Challenge Progression
+- **Tutorial**: Single function, 1 file, 1-2 flaws
+- **Medium**: 3-5 files, 3-4 flaws, interconnected issues
+- **Full repo**: 10-20 files, 5-7 interconnected flaws, real architecture
+- **Multi-stage**: Requirements evolve mid-challenge, bugs compound from earlier AI mistakes
 
 ## Tech Stack
 - **Framework**: Next.js 15 (App Router) + TypeScript
@@ -32,60 +50,41 @@ Web-based challenge platform where the human sees the *true* problem requirement
 - **Deployment**: Vercel
 - **CI/CD**: GitHub Actions
 
-## Multi-Agent Architecture (5 agents via tmux)
-
-### Agent Roles & File Ownership
-| Agent | Role | Owns |
-|-------|------|------|
-| Architect | Scaffold & Infra | Project setup, `src/lib/db/`, `src/lib/redis.ts`, `src/lib/types.ts` |
-| Facade | UI Shell & Two-Panel Layout | `src/components/`, `src/app/page.tsx`, `src/app/challenge/[id]/`, `src/stores/` |
-| Phantom | Asymmetry Engine & API Routes | `src/engine/`, `src/app/api/` |
-| Riddler | Challenges + E2B Sandbox | `src/challenges/`, `src/lib/sandbox.ts`, `src/lib/test-runner.ts` |
-| Arbiter | Scoring, Leaderboard & Post-Mortem | `src/app/(auth)/`, `src/app/leaderboard/`, `src/app/profile/`, `src/lib/scoring.ts`, `src/lib/inngest/` |
-
-### Dependency Order
-1. **Architect** runs first — scaffolds project, installs deps, creates DB schema, defines shared types
-2. After Architect pushes initial commit, **Facade**, **Phantom**, **Riddler**, **Arbiter** run in parallel
-3. All agents commit to main (file ownership prevents conflicts)
-
 ## Project Structure
 ```
 src/
 ├── app/
 │   ├── layout.tsx
 │   ├── page.tsx
-│   ├── (auth)/             # Arbiter
-│   ├── challenge/[id]/     # Facade
-│   ├── leaderboard/        # Arbiter
-│   ├── profile/            # Arbiter
-│   └── api/                # Phantom
-├── components/             # Facade
-├── stores/                 # Facade
+│   ├── (auth)/             # Auth pages
+│   ├── challenge/[id]/     # Challenge session view
+│   ├── leaderboard/        # Leaderboard
+│   ├── profile/            # User profile
+│   └── api/                # API routes
+│       ├── session/        # POST /api/session
+│       ├── chat/           # POST /api/chat (SSE)
+│       └── score/          # POST /api/score
+├── components/             # React components
+├── stores/                 # Zustand stores
 ├── lib/
-│   ├── db/                 # Architect (Arbiter extends)
-│   ├── redis.ts            # Architect
-│   ├── types.ts            # Architect
-│   ├── sandbox.ts          # Riddler
-│   ├── test-runner.ts      # Riddler
-│   ├── scoring.ts          # Arbiter
-│   └── inngest/            # Arbiter
-├── engine/                 # Phantom
-│   ├── prompt-builder.ts
-│   ├── reveal-handler.ts
-│   ├── feedback-filter.ts
-│   └── similarity.ts
-└── challenges/             # Riddler
-    ├── 01-invoice-parser/
-    ├── 02-leaderboard-ranking/
-    ├── 03-rate-limiter/
-    ├── 04-config-migration/
-    ├── 05-pii-redaction/
-    ├── 06-event-deduplicator/
-    ├── 07-notification-router/
-    └── 08-log-aggregator/
+│   ├── db/                 # Supabase client
+│   ├── redis.ts            # Upstash Redis client
+│   ├── types.ts            # Shared TypeScript types
+│   ├── sandbox.ts          # E2B sandbox integration
+│   ├── test-runner.ts      # Test execution + parsing
+│   ├── scoring.ts          # Score calculation
+│   └── inngest/            # Async scoring jobs
+├── engine/                 # Asymmetry engine
+│   ├── prompt-builder.ts   # Builds AI system prompt from brief
+│   ├── feedback-filter.ts  # Filters test output (full for human, category for AI)
+│   └── similarity.ts       # Anti-cheese similarity detection
+└── challenges/             # Challenge definitions
+    ├── loader.ts           # Challenge loading
+    ├── seed.ts             # DB seeding
+    └── [01-08]-*/          # 8 challenges with truth, brief, starter, tests
 ```
 
-## API Contracts (Facade <-> Phantom)
+## API Contracts
 
 ### POST /api/session
 ```typescript
@@ -95,7 +94,6 @@ src/
 {
   sessionId: string;
   challenge: { id, title, tags, truthSpec: string, starterFiles: Record<string, string> };
-  revealBudget: number; // 3
 }
 ```
 
@@ -106,14 +104,6 @@ src/
 // Response: SSE stream
 // Types: ai_message, tool_call, tool_result, test_feedback_human,
 //        test_feedback_ai, code_update, similarity_blocked, done
-```
-
-### POST /api/reveal
-```typescript
-// Request
-{ sessionId: string; snippet: string }
-// Response
-{ revealsRemaining: number; injectedAs: string }
 ```
 
 ### POST /api/score
@@ -127,12 +117,12 @@ src/
 ## Key Design Rules
 1. AI NEVER sees the Truth spec
 2. User NEVER sees the AI Brief — must infer flaws from AI behavior
-3. Reveals injected as "Updated requirement from stakeholder: ..."
-4. Test feedback to AI: category + direction only, never raw output
-5. Free-text messages checked for semantic similarity to Truth (cosine > 0.85 = blocked)
-6. Truth panel: `user-select: none` + context menu disabled
-7. AI system prompt uses "stakeholder clarification" framing — no meta-awareness
-8. All user messages are free-text — no structured action buttons
+3. Test feedback to AI: category + direction only, never raw output
+4. Free-text messages checked for semantic similarity to Truth (cosine > 0.85 = blocked)
+5. Truth panel: `user-select: none` + context menu disabled
+6. AI system prompt uses "stakeholder clarification" framing — no meta-awareness
+7. All user messages are free-text — no structured action buttons
+8. No reveals — pure conversation is the only interaction mode
 
 ## Anti-Cheese Enforcement
 1. Non-selectable Truth panel (CSS `user-select: none`)
@@ -141,13 +131,13 @@ src/
 4. AI pushback on overly specific instructions (system prompt rule)
 
 ## Scoring Formula
-- Correctness = (hidden tests passed / total) x 100
-- Intervention efficiency = 100 - (reveals x 15) - (messages x 2)
+- Correctness = (tests passed / total) x 100
+- Intervention efficiency = 100 - (messages x 2)
 - Diagnosis quality = post-mortem accuracy x 100
 - Total = weighted average (correctness 50%, efficiency 30%, diagnosis 20%)
-- S-rank = 100% correctness + 0 reveals + efficiency > 80
+- S-rank = 100% correctness + efficiency > 80 + accurate diagnosis
 
-## 8 Challenges
+## 8 Challenges (V1)
 1. Invoice Line Item Parser (CTX, MFEED)
 2. Leaderboard Ranking (CTX, AMB)
 3. Rate Limiter (CTX, ARCH)
@@ -175,8 +165,6 @@ create table sessions (
   user_id uuid references auth.users,
   challenge_id text references challenges(id),
   status text default 'active',
-  reveals_used int default 0,
-  max_reveals int default 3,
   messages jsonb[] default '{}',
   tool_calls jsonb[] default '{}',
   test_results jsonb[] default '{}',
@@ -220,6 +208,12 @@ AI_BRIEF
 
 Existing codebase has been loaded into your workspace.
 ```
+
+## Future: Multiplayer (V2)
+- **Race to Correct**: same challenge, same flawed brief, separate AIs, first to pass tests wins
+- **Prompt Golf**: fewest total characters to pass all tests, async leaderboard
+- **Adversary**: one player writes flawed brief, another solves it, two ELO tracks
+- WebSocket infrastructure, matchmaking, split-screen spectating, replays
 
 ## Documentation Maintenance
 - **README.md** is the comprehensive technical reference for this project. **Proactively update it** whenever you make changes that affect: architecture, dependencies, API contracts, environment variables, database schema, project structure, deployment, or scoring logic.

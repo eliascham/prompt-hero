@@ -5,6 +5,5 @@
   "tags": ["sorting", "tiebreaking", "ranking"],
   "flawTypes": ["CTX", "AMB"],
   "estimatedMinutes": 12,
-  "optimalMessages": 3,
-  "optimalReveals": 1
+  "optimalMessages": 3
 }

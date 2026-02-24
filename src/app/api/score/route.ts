@@ -51,8 +51,6 @@ export async function POST(request: NextRequest) {
         userId: data.user_id,
         challengeId: data.challenge_id,
         status: data.status as Session["status"],
-        revealsUsed: data.reveals_used,
-        maxReveals: data.max_reveals,
         messages: data.messages as Session["messages"],
         toolCalls: data.tool_calls as Session["toolCalls"],
         testResults: data.test_results as Session["testResults"],
@@ -74,7 +72,6 @@ export async function POST(request: NextRequest) {
     const correctness = calculateCorrectness(session.testResults);
     const userMessages = session.messages.filter((m) => m.role === "user");
     const interventionEfficiency = calculateEfficiency(
-      session.revealsUsed,
       userMessages.length,
     );
     const diagnosisQuality = postMortem
@@ -88,7 +85,6 @@ export async function POST(request: NextRequest) {
     const rank = determineRank(
       totalScore,
       correctness,
-      session.revealsUsed,
       interventionEfficiency,
     );
 

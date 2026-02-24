@@ -7,12 +7,12 @@
     "title": "PII Redaction",
     "overview": "Build a text redactor that identifies and replaces personally identifiable information (PII) with type-specific markers.",
     "requirements": [
-      { "id": "R1", "text": "Detect and redact email addresses → replace with [REDACTED_EMAIL]", "revealable": true },
-      { "id": "R2", "text": "Detect and redact phone numbers → replace with [REDACTED_PHONE]", "revealable": true },
-      { "id": "R3", "text": "Detect and redact SSNs (XXX-XX-XXXX format) → replace with [REDACTED_SSN]", "revealable": true },
-      { "id": "R4", "text": "Use type-specific markers (not a generic marker)", "revealable": true },
-      { "id": "R5", "text": "Handle multiple PII instances in the same text", "revealable": false },
-      { "id": "R6", "text": "Preserve all non-PII text exactly as-is", "revealable": false }
+      { "id": "R1", "text": "Detect and redact email addresses → replace with [REDACTED_EMAIL]" },
+      { "id": "R2", "text": "Detect and redact phone numbers → replace with [REDACTED_PHONE]" },
+      { "id": "R3", "text": "Detect and redact SSNs (XXX-XX-XXXX format) → replace with [REDACTED_SSN]" },
+      { "id": "R4", "text": "Use type-specific markers (not a generic marker)" },
+      { "id": "R5", "text": "Handle multiple PII instances in the same text" },
+      { "id": "R6", "text": "Preserve all non-PII text exactly as-is" }
     ],
     "edgeCases": [
       "Text with no PII should be returned unchanged",
@@ -54,7 +54,6 @@
   "meta": {
     "estimatedMinutes": 15,
     "optimalMessages": 4,
-    "optimalReveals": 1,
     "flawTypes": ["CTX", "MFEED"]
   }
 }
