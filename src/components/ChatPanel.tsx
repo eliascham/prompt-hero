@@ -8,7 +8,7 @@ import { TestResultBadge } from "./TestResultBadge";
 import { ChatInput } from "./ChatInput";
 import { useSessionStore } from "@/stores/sessionStore";
 import type { ChatMessage, ToolCallRecord, TestResult } from "@/lib/types";
-import { Loader2 } from "lucide-react";
+import { Loader2, MessageSquare } from "lucide-react";
 
 export function ChatPanel() {
   const messages = useSessionStore((s) => s.messages);
@@ -42,6 +42,18 @@ export function ChatPanel() {
 
   return (
     <div className="flex h-full flex-col">
+      {/* Header bar */}
+      <div className="flex h-10 items-center justify-between border-b border-border/40 px-3">
+        <div className="flex items-center gap-1.5">
+          <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-xs font-medium">Chat</span>
+        </div>
+        {messages.length > 0 && (
+          <span className="text-[10px] text-muted-foreground">
+            {messages.length} msg{messages.length !== 1 && "s"}
+          </span>
+        )}
+      </div>
       <ScrollArea className="flex-1">
         <div className="py-2">
           {timeline.length === 0 && (

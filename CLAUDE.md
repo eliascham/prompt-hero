@@ -221,6 +221,10 @@ AI_BRIEF
 Existing codebase has been loaded into your workspace.
 ```
 
+## Documentation Maintenance
+- **README.md** is the comprehensive technical reference for this project. **Proactively update it** whenever you make changes that affect: architecture, dependencies, API contracts, environment variables, database schema, project structure, deployment, or scoring logic.
+- Keep the README in sync with the actual codebase — don't let it drift.
+
 ## Notion Docs
 - Main spec: https://www.notion.so/30ea063452eb80878b56d878b397963d
 - Challenges: https://www.notion.so/84140c069ce34e078f2612ad461cde9e

@@ -1,11 +1,88 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useRef, useEffect, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { useCodeStore } from "@/stores/codeStore";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { GitCompareArrows, FileCode } from "lucide-react";
+import { GitCompareArrows, FileCode, Loader2 } from "lucide-react";
+import type { editor } from "monaco-editor";
+
+const MonacoEditor = dynamic(() => import("@monaco-editor/react").then((m) => m.default), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full items-center justify-center">
+      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+    </div>
+  ),
+});
+
+const MonacoDiffEditor = dynamic(
+  () => import("@monaco-editor/react").then((m) => m.DiffEditor),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-full items-center justify-center">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    ),
+  },
+);
+
+function detectLanguage(path: string): string {
+  const ext = path.split(".").pop()?.toLowerCase();
+  switch (ext) {
+    case "ts":
+    case "tsx":
+      return "typescript";
+    case "js":
+    case "jsx":
+      return "javascript";
+    case "json":
+      return "json";
+    case "md":
+      return "markdown";
+    case "css":
+      return "css";
+    case "html":
+      return "html";
+    case "py":
+      return "python";
+    case "yaml":
+    case "yml":
+      return "yaml";
+    default:
+      return "plaintext";
+  }
+}
+
+const editorOptions: editor.IStandaloneEditorConstructionOptions = {
+  readOnly: true,
+  minimap: { enabled: false },
+  fontSize: 13,
+  lineNumbers: "on",
+  scrollBeyondLastLine: false,
+  wordWrap: "on",
+  renderLineHighlight: "line",
+  cursorStyle: "line",
+  cursorBlinking: "smooth",
+  smoothScrolling: true,
+  selectionHighlight: true,
+  occurrencesHighlight: "singleFile",
+  folding: true,
+  padding: { top: 8, bottom: 8 },
+  guides: { indentation: true },
+};
+
+const diffOptions: editor.IDiffEditorConstructionOptions = {
+  readOnly: true,
+  minimap: { enabled: false },
+  fontSize: 13,
+  lineNumbers: "on",
+  scrollBeyondLastLine: false,
+  renderSideBySide: true,
+  padding: { top: 8, bottom: 8 },
+};
 
 export function CodeViewer() {
   const files = useCodeStore((s) => s.files);
@@ -14,29 +91,31 @@ export function CodeViewer() {
   const originalFiles = useCodeStore((s) => s.originalFiles);
   const setActiveFile = useCodeStore((s) => s.setActiveFile);
   const toggleDiffMode = useCodeStore((s) => s.toggleDiffMode);
-  const updateFile = useCodeStore((s) => s.updateFile);
+
+  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const filePaths = Object.keys(files);
   const currentContent = activeFile ? files[activeFile] ?? "" : "";
   const originalContent = activeFile ? originalFiles[activeFile] ?? "" : "";
   const hasChanges = currentContent !== originalContent;
+  const language = activeFile ? detectLanguage(activeFile) : "plaintext";
 
-  // Listen for code updates from SSE
-  const handleCodeUpdate = useCallback(
-    (e: Event) => {
-      const detail = (e as CustomEvent).detail as {
-        path: string;
-        content: string;
-      };
-      updateFile(detail.path, detail.content);
-    },
-    [updateFile]
-  );
+  const handleEditorMount = useCallback((editor: editor.IStandaloneCodeEditor) => {
+    editorRef.current = editor;
+  }, []);
 
+  // ResizeObserver to reflow Monaco when panel resizes (e.g. truth collapse)
   useEffect(() => {
-    window.addEventListener("code-update", handleCodeUpdate);
-    return () => window.removeEventListener("code-update", handleCodeUpdate);
-  }, [handleCodeUpdate]);
+    const container = containerRef.current;
+    if (!container) return;
+
+    const observer = new ResizeObserver(() => {
+      editorRef.current?.layout();
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div className="flex h-full flex-col">
@@ -78,59 +157,31 @@ export function CodeViewer() {
       </div>
 
       {/* Code content */}
-      <ScrollArea className="flex-1">
+      <div ref={containerRef} className="flex-1 min-h-0">
         {activeFile ? (
-          <pre className="p-4 text-xs leading-relaxed">
-            <code>
-              {diffMode && hasChanges
-                ? renderSimpleDiff(originalContent, currentContent)
-                : currentContent}
-            </code>
-          </pre>
+          diffMode && hasChanges ? (
+            <MonacoDiffEditor
+              original={originalContent}
+              modified={currentContent}
+              language={language}
+              theme="vs-dark"
+              options={diffOptions}
+            />
+          ) : (
+            <MonacoEditor
+              value={currentContent}
+              language={language}
+              theme="vs-dark"
+              options={editorOptions}
+              onMount={handleEditorMount}
+            />
+          )
         ) : (
-          <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
+          <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
             No files loaded yet
           </div>
         )}
-      </ScrollArea>
+      </div>
     </div>
   );
-}
-
-function renderSimpleDiff(original: string, modified: string) {
-  const origLines = original.split("\n");
-  const modLines = modified.split("\n");
-  const maxLen = Math.max(origLines.length, modLines.length);
-  const parts: { text: string; type: "same" | "add" | "remove" }[] = [];
-
-  for (let i = 0; i < maxLen; i++) {
-    const oLine = origLines[i];
-    const mLine = modLines[i];
-    if (oLine === mLine) {
-      parts.push({ text: `  ${mLine ?? ""}`, type: "same" });
-    } else {
-      if (oLine !== undefined) {
-        parts.push({ text: `- ${oLine}`, type: "remove" });
-      }
-      if (mLine !== undefined) {
-        parts.push({ text: `+ ${mLine}`, type: "add" });
-      }
-    }
-  }
-
-  return parts.map((p, i) => (
-    <span
-      key={i}
-      className={
-        p.type === "add"
-          ? "bg-emerald-500/15 text-emerald-400"
-          : p.type === "remove"
-            ? "bg-red-500/15 text-red-400"
-            : ""
-      }
-    >
-      {p.text}
-      {"\n"}
-    </span>
-  ));
 }

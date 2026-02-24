@@ -50,34 +50,33 @@ export async function processReveal(
     timestamp: new Date().toISOString(),
   };
 
-  // Update session in DB
+  // Build reveal message
   const newRevealsUsed = session.revealsUsed + 1;
-  const { error: updateError } = await supabase
-    .from("sessions")
-    .update({ reveals_used: newRevealsUsed })
-    .eq("id", sessionId);
-
-  if (updateError) {
-    throw new Error("Failed to update session reveals");
-  }
-
-  // Update cache
-  session.revealsUsed = newRevealsUsed;
-  await cacheSession(sessionId, session);
-
-  // Store reveal in session messages as a system message
   const revealMessage = {
     id: crypto.randomUUID(),
     role: "system" as const,
     content: injectedAs,
     timestamp: reveal.timestamp,
   };
-  await supabase
+  const updatedMessages = [...session.messages, revealMessage];
+
+  // Atomic DB update: reveals_used + messages in one call
+  const { error: updateError } = await supabase
     .from("sessions")
     .update({
-      messages: [...session.messages, revealMessage],
+      reveals_used: newRevealsUsed,
+      messages: updatedMessages,
     })
     .eq("id", sessionId);
+
+  if (updateError) {
+    throw new Error("Failed to update session reveals");
+  }
+
+  // Update cache AFTER DB update so cache has the reveal message
+  session.revealsUsed = newRevealsUsed;
+  session.messages = updatedMessages;
+  await cacheSession(sessionId, session);
 
   return {
     injectedAs,

@@ -32,7 +32,7 @@ export function TruthPanel({
 
   return (
     <div
-      className="flex h-full flex-col"
+      className="flex h-full min-w-0 overflow-hidden flex-col"
       onContextMenu={(e) => e.preventDefault()}
     >
       <div className="flex items-center justify-between border-b border-border/40 px-4 py-3">
@@ -72,7 +72,7 @@ export function TruthPanel({
                 <li
                   key={req.id}
                   onClick={() => {
-                    if (req.revealable && revealsUsed < maxReveals) {
+                    if (revealsUsed < maxReveals) {
                       setSelectedReq(
                         selectedReq === req.text ? null : req.text
                       );
@@ -81,20 +81,12 @@ export function TruthPanel({
                   className={`rounded-md border px-3 py-2 text-sm leading-relaxed transition-colors ${
                     selectedReq === req.text
                       ? "border-amber-500/50 bg-amber-500/10 text-foreground"
-                      : req.revealable && revealsUsed < maxReveals
+                      : revealsUsed < maxReveals
                         ? "cursor-pointer border-transparent hover:border-border hover:bg-muted/50"
                         : "border-transparent text-muted-foreground"
                   }`}
                 >
                   {req.text}
-                  {req.revealable && revealsUsed < maxReveals && (
-                    <Badge
-                      variant="outline"
-                      className="ml-2 text-[9px] font-normal opacity-50"
-                    >
-                      revealable
-                    </Badge>
-                  )}
                 </li>
               ))}
             </ul>

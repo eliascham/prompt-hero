@@ -9,8 +9,11 @@ export interface SandboxInstance {
 
 const activeSandboxes = new Map<string, SandboxInstance>();
 
+const MAX_CREATE_RETRIES = 2;
+
 /**
  * Creates a new E2B sandbox for an isolated coding session.
+ * Retries once on timeout since cold starts can be slow.
  */
 export async function createSandbox(
   sessionId: string,
@@ -21,15 +24,28 @@ export async function createSandbox(
     await closeSandbox(sessionId);
   }
 
-  const sandbox = await Sandbox.create({
-    timeoutMs: SANDBOX_TIMEOUT_MS,
-  });
-
-  // Write starter files into sandbox
-  if (starterFiles) {
-    for (const [filename, content] of Object.entries(starterFiles)) {
-      await sandbox.files.write(`/home/user/${filename}`, content);
+  let sandbox: Sandbox | null = null;
+  for (let attempt = 1; attempt <= MAX_CREATE_RETRIES; attempt++) {
+    try {
+      sandbox = await Sandbox.create({
+        timeoutMs: SANDBOX_TIMEOUT_MS,
+      });
+      break;
+    } catch (err) {
+      console.warn(`Sandbox creation attempt ${attempt} failed:`, err);
+      if (attempt === MAX_CREATE_RETRIES) throw err;
     }
+  }
+
+  if (!sandbox) throw new Error("Failed to create sandbox");
+
+  // Write starter files into sandbox in parallel
+  if (starterFiles) {
+    await Promise.all(
+      Object.entries(starterFiles).map(([filename, content]) =>
+        sandbox!.files.write(`/home/user/${filename}`, content)
+      )
+    );
   }
 
   const instance: SandboxInstance = { sandbox, sessionId };

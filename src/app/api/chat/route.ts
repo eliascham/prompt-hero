@@ -8,14 +8,14 @@ import {
   filterTestFeedbackForHuman,
   filterTestFeedbackForAI,
 } from "@/engine/feedback-filter";
-import { loadChallenge } from "@/app/api/_helpers/challenge-loader";
+import { loadChallenge, loadChallengeTestFiles } from "@/app/api/_helpers/challenge-loader";
+import { executeTool } from "@/engine/tool-executor";
 import type {
   ChatRequest,
   Session,
   ChatMessage,
   SSEEventType,
   Reveal,
-  TestResult,
 } from "@/lib/types";
 
 const MIN_MESSAGE_LENGTH = 1;
@@ -74,64 +74,7 @@ const TOOLS: Anthropic.Tool[] = [
 ];
 
 function sseEncode(event: SSEEventType, data: unknown): string {
-  return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
-}
-
-/**
- * Mock tool execution — returns plausible responses.
- * Will be replaced by E2B sandbox integration later.
- */
-function mockToolExecution(
-  toolName: string,
-  input: Record<string, unknown>,
-  starterFiles: Record<string, string>
-): { output: string; testResults?: TestResult[] } {
-  switch (toolName) {
-    case "read_file": {
-      const path = input.path as string;
-      const content = starterFiles[path];
-      if (content) {
-        return { output: content };
-      }
-      return { output: `Error: File not found: ${path}` };
-    }
-    case "write_file": {
-      const path = input.path as string;
-      // Track the write (in a real implementation, this updates the sandbox)
-      starterFiles[path] = input.content as string;
-      return { output: `Successfully wrote to ${path}` };
-    }
-    case "run_tests": {
-      const results: TestResult[] = [
-        {
-          passed: true,
-          testName: "basic functionality",
-          category: "core",
-          direction: "passing",
-          rawOutput: "Test passed: basic functionality works as expected",
-          timestamp: new Date().toISOString(),
-        },
-        {
-          passed: false,
-          testName: "edge case handling",
-          category: "edge-cases",
-          direction: "output format incorrect",
-          rawOutput:
-            'Expected output to match format "key: value" but received "key=value"',
-          timestamp: new Date().toISOString(),
-        },
-      ];
-      return {
-        output: `2 tests run: 1 passed, 1 failed`,
-        testResults: results,
-      };
-    }
-    case "run_command": {
-      return { output: `$ ${input.command}\nCommand executed successfully.` };
-    }
-    default:
-      return { output: "Unknown tool" };
-  }
+  return `data: ${JSON.stringify({ type: event, data })}\n\n`;
 }
 
 async function loadSession(sessionId: string): Promise<Session | null> {
@@ -262,6 +205,9 @@ export async function POST(request: NextRequest) {
       timestamp: m.timestamp,
     }));
 
+  // Load test files for sandbox execution
+  const testFiles = await loadChallengeTestFiles(session.challengeId);
+
   // Build system prompt using AI brief (NEVER truth spec)
   const systemPrompt = buildSystemPrompt(challenge.aiBrief, reveals);
 
@@ -273,160 +219,221 @@ export async function POST(request: NextRequest) {
       content: m.content,
     }));
 
-  // SSE streaming response
+  // SSE streaming response with agentic tool-use loop.
+  // Claude may call tools and expect results before continuing.
+  // We loop: stream response → execute tools → feed results back → repeat.
   const stream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
 
       try {
         const anthropic = new Anthropic();
+        const MAX_TOOL_ROUNDS = 10;
 
-        // Call Anthropic API with streaming
-        const response = await anthropic.messages.create({
-          model: "claude-sonnet-4-6-20250514",
-          max_tokens: 4096,
-          system: systemPrompt,
-          messages: anthropicMessages,
-          tools: TOOLS,
-          stream: true,
-        });
+        for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+          const response = await anthropic.messages.create({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 4096,
+            system: systemPrompt,
+            messages: anthropicMessages,
+            tools: TOOLS,
+            stream: true,
+          });
 
-        let currentText = "";
-        let currentToolUse: {
-          id: string;
-          name: string;
-          inputJson: string;
-        } | null = null;
+          // Per-round accumulators
+          let fullText = "";
+          let currentBlockText = "";
+          let currentToolUse: {
+            id: string;
+            name: string;
+            inputJson: string;
+          } | null = null;
+          let stopReason: string | null = null;
 
-        for await (const event of response) {
-          switch (event.type) {
-            case "content_block_start": {
-              if (event.content_block.type === "text") {
-                currentText = "";
-              } else if (event.content_block.type === "tool_use") {
-                currentToolUse = {
-                  id: event.content_block.id,
-                  name: event.content_block.name,
-                  inputJson: "",
-                };
-                controller.enqueue(
-                  encoder.encode(
-                    sseEncode("tool_call", {
-                      toolId: event.content_block.id,
-                      name: event.content_block.name,
-                    })
-                  )
-                );
-              }
-              break;
-            }
-            case "content_block_delta": {
-              if (event.delta.type === "text_delta") {
-                currentText += event.delta.text;
-                controller.enqueue(
-                  encoder.encode(
-                    sseEncode("ai_message", { text: event.delta.text })
-                  )
-                );
-              } else if (event.delta.type === "input_json_delta") {
-                if (currentToolUse) {
-                  currentToolUse.inputJson += event.delta.partial_json;
-                }
-              }
-              break;
-            }
-            case "content_block_stop": {
-              if (currentToolUse) {
-                // Parse tool input and execute mock
-                const toolInput = currentToolUse.inputJson
-                  ? JSON.parse(currentToolUse.inputJson)
-                  : {};
+          // Content blocks for the assistant message (for API continuation)
+          const assistantContent: Array<
+            | { type: "text"; text: string }
+            | { type: "tool_use"; id: string; name: string; input: Record<string, unknown> }
+          > = [];
 
-                const result = mockToolExecution(
-                  currentToolUse.name,
-                  toolInput,
-                  challenge.starterCode
-                );
+          // Tool results for feeding back to the API
+          const toolResultBlocks: Array<{
+            type: "tool_result";
+            tool_use_id: string;
+            content: string;
+          }> = [];
 
-                // Send tool result
-                controller.enqueue(
-                  encoder.encode(
-                    sseEncode("tool_result", {
-                      toolId: currentToolUse.id,
-                      name: currentToolUse.name,
-                      output: result.output,
-                    })
-                  )
-                );
-
-                // If test results, send filtered feedback
-                if (result.testResults) {
-                  for (const tr of result.testResults) {
-                    controller.enqueue(
-                      encoder.encode(
-                        sseEncode(
-                          "test_feedback_human",
-                          filterTestFeedbackForHuman(tr)
-                        )
-                      )
-                    );
-                    controller.enqueue(
-                      encoder.encode(
-                        sseEncode(
-                          "test_feedback_ai",
-                          filterTestFeedbackForAI(tr)
-                        )
-                      )
-                    );
-                  }
-                }
-
-                // Track tool call in session
-                session.toolCalls.push({
-                  id: currentToolUse.id,
-                  name: currentToolUse.name as
-                    | "run_tests"
-                    | "read_file"
-                    | "write_file"
-                    | "run_command",
-                  input: toolInput,
-                  output: result.output,
-                  timestamp: new Date().toISOString(),
-                });
-
-                // Track test results
-                if (result.testResults) {
-                  session.testResults.push(...result.testResults);
-                }
-
-                // If write_file, send code_update
-                if (currentToolUse.name === "write_file") {
+          for await (const event of response) {
+            switch (event.type) {
+              case "content_block_start": {
+                if (event.content_block.type === "text") {
+                  currentBlockText = "";
+                } else if (event.content_block.type === "tool_use") {
+                  currentToolUse = {
+                    id: event.content_block.id,
+                    name: event.content_block.name,
+                    inputJson: "",
+                  };
                   controller.enqueue(
                     encoder.encode(
-                      sseEncode("code_update", {
-                        path: toolInput.path,
-                        content: toolInput.content,
+                      sseEncode("tool_call", {
+                        toolId: event.content_block.id,
+                        name: event.content_block.name,
                       })
                     )
                   );
                 }
+                break;
+              }
+              case "content_block_delta": {
+                if (event.delta.type === "text_delta") {
+                  currentBlockText += event.delta.text;
+                  fullText += event.delta.text;
+                  controller.enqueue(
+                    encoder.encode(
+                      sseEncode("ai_message", { text: event.delta.text })
+                    )
+                  );
+                } else if (event.delta.type === "input_json_delta") {
+                  if (currentToolUse) {
+                    currentToolUse.inputJson += event.delta.partial_json;
+                  }
+                }
+                break;
+              }
+              case "content_block_stop": {
+                if (currentToolUse) {
+                  // Tool block ended — parse, execute, collect result
+                  const toolInput = currentToolUse.inputJson
+                    ? JSON.parse(currentToolUse.inputJson)
+                    : {};
 
-                currentToolUse = null;
+                  assistantContent.push({
+                    type: "tool_use",
+                    id: currentToolUse.id,
+                    name: currentToolUse.name,
+                    input: toolInput,
+                  });
+
+                  const result = await executeTool(
+                    session.id,
+                    currentToolUse.name,
+                    toolInput,
+                    challenge.starterCode,
+                    testFiles,
+                  );
+
+                  // Stream tool result to client
+                  controller.enqueue(
+                    encoder.encode(
+                      sseEncode("tool_result", {
+                        toolId: currentToolUse.id,
+                        name: currentToolUse.name,
+                        output: result.output,
+                      })
+                    )
+                  );
+
+                  // Stream test feedback if present
+                  if (result.testResults) {
+                    for (const tr of result.testResults) {
+                      controller.enqueue(
+                        encoder.encode(
+                          sseEncode("test_feedback_human", filterTestFeedbackForHuman(tr))
+                        )
+                      );
+                      controller.enqueue(
+                        encoder.encode(
+                          sseEncode("test_feedback_ai", filterTestFeedbackForAI(tr))
+                        )
+                      );
+                    }
+                  }
+
+                  // Track tool call in session
+                  session.toolCalls.push({
+                    id: currentToolUse.id,
+                    name: currentToolUse.name as
+                      | "run_tests"
+                      | "read_file"
+                      | "write_file"
+                      | "run_command",
+                    input: toolInput,
+                    output: result.output,
+                    timestamp: new Date().toISOString(),
+                  });
+
+                  if (result.testResults) {
+                    session.testResults.push(...result.testResults);
+                  }
+
+                  // Send code_update for write_file
+                  if (currentToolUse.name === "write_file") {
+                    controller.enqueue(
+                      encoder.encode(
+                        sseEncode("code_update", {
+                          path: toolInput.path,
+                          content: toolInput.content,
+                        })
+                      )
+                    );
+                  }
+
+                  // Collect for API continuation
+                  toolResultBlocks.push({
+                    type: "tool_result",
+                    tool_use_id: currentToolUse.id,
+                    content: result.output,
+                  });
+
+                  currentToolUse = null;
+                } else {
+                  // Text block ended
+                  if (currentBlockText) {
+                    assistantContent.push({
+                      type: "text",
+                      text: currentBlockText,
+                    });
+                  }
+                  currentBlockText = "";
+                }
+                break;
               }
-              break;
-            }
-            case "message_stop": {
-              // Store assistant response
-              if (currentText) {
-                session.messages.push({
-                  id: crypto.randomUUID(),
-                  role: "assistant",
-                  content: currentText,
-                  timestamp: new Date().toISOString(),
-                });
+              case "message_delta": {
+                if ("stop_reason" in event.delta) {
+                  stopReason = event.delta.stop_reason;
+                }
+                break;
               }
-              break;
+              case "message_stop": {
+                // Store full assistant text in session history
+                if (fullText) {
+                  session.messages.push({
+                    id: crypto.randomUUID(),
+                    role: "assistant",
+                    content: fullText,
+                    timestamp: new Date().toISOString(),
+                  });
+                }
+                break;
+              }
             }
+          }
+
+          // If Claude wants to continue after tool use, feed results back
+          if (stopReason === "tool_use" && toolResultBlocks.length > 0) {
+            anthropicMessages.push({
+              role: "assistant",
+              content: assistantContent as Anthropic.MessageParam["content"],
+            });
+            anthropicMessages.push({
+              role: "user",
+              content: toolResultBlocks as unknown as Anthropic.MessageParam["content"],
+            });
+            // Continue to next round
+          } else {
+            // Done — end_turn, max_tokens, or no more tool calls
+            break;
           }
         }
 
